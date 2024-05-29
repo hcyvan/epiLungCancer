@@ -1,0 +1,12 @@
+.idea
+
+config.yaml
+
+.Rproj.user
+.Rhistory
+*.Rproj
+__pycache__/
+.ipynb_checkpoints
+tmp
+.DS_Store
+*.egg-info
