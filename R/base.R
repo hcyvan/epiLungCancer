@@ -1,4 +1,5 @@
 library(dplyr)
+library(readxl)
 
 
 configDefaultPath <- './config.default.yaml'
@@ -64,10 +65,22 @@ saveImage <- function(file,...){
     pdf(file=file.path, ...)
   }
 }
+
+removeNegativeOne <- function(m){
+  m[rowSums(m[,4:ncol(m)]==-1)==0,]
+}
 ################################################################################
-FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'SCLC','LCC')
-COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f', '#b8b1dc','#fa66b3')
+FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
+COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
 names(COLOR_MAP_GROUP)<-FACTOR_LEVEL_GROUP
+
+g2color<-function(group,alpha=NULL){
+  color<-COLOR_MAP_GROUP[match(group, names(COLOR_MAP_GROUP))]
+  if(!is.null(alpha)){
+    color<-alpha(color, alpha)
+  }
+  color
+}
 #################################################################################
 Sample <- setRefClass(
   "sample",
@@ -89,3 +102,4 @@ Sample <- setRefClass(
 )
 
 SAMPLE<-Sample()
+
