@@ -73,6 +73,10 @@ removeNegativeOne <- function(m){
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
 COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
 names(COLOR_MAP_GROUP)<-FACTOR_LEVEL_GROUP
+SHAPE_MAP_GROUP=c(16,15,17,10, 7)
+names(SHAPE_MAP_GROUP)<-FACTOR_LEVEL_GROUP
+
+
 
 g2color<-function(group,alpha=NULL){
   color<-COLOR_MAP_GROUP[match(group, names(COLOR_MAP_GROUP))]
@@ -95,6 +99,15 @@ Sample <- setRefClass(
       table<<-dplyr::select(data, SampleName, Group, Color)
       list<<-split(table,table$Group)
     },
+    sample2group=function(samples){
+      table$Group[match(samples,table$SampleName)]
+    },
+    selectFromBed=function(bed,samples=NULL){
+      if (is.null(samples)){
+        samples<-table$SampleName
+      }
+      bed[,c(1:3,match(samples, colnames(bed)))]
+    },
     show = function() {
       print(table(table$Group))
     }
@@ -102,4 +115,5 @@ Sample <- setRefClass(
 )
 
 SAMPLE<-Sample()
+
 
