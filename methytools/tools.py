@@ -96,7 +96,6 @@ def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down
     cols = header.split('\t')
     sample_count = len(cols) - 3
     with open(out_matrix, 'w') as fo:
-        fo.write(header)
         finals = []
         total = len(center_file)
         start = time.time()
@@ -120,8 +119,8 @@ def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down
             finals.append(m)
         finals = np.array(finals)
         finals = np.nanmean(finals, axis=0)
-        out_items = cols[0:3] + [str(round(x, 4)) for x in finals]
-        fo.write('\t'.join(out_items) + '\n')
+        fo.write('\t'.join(cols[3:]) + '\n')
+        fo.write('\t'.join([str(round(x, 4)) for x in finals]) + '\n')
 
 
 if __name__ == '__main__':

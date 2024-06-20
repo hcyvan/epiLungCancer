@@ -24,7 +24,7 @@ def main():
     parser_region_methy.add_argument('-u', '--up', default=-50, type=int,
                                      help='the left bounder to the center, center is 0,left is negative, right is positive')
     parser_region_methy.add_argument('-d', '--down', default=50, type=int,
-                                     help='the left bounder to the center, center is 0,left is negative, right is positive')
+                                     help='the right bounder to the center, center is 0,left is negative, right is positive')
     parser_region_methy.add_argument('-o', '--out', help='The output signal file')
     parser_region_methy.add_argument('-v', '--version', action='version', version='0.1')
 
