@@ -1,4 +1,4 @@
-import argparse
+import pysam
 import gzip
 from importlib import resources
 import pandas as pd
@@ -84,6 +84,44 @@ def extract_signal(ratio_txt, element, out_matrix, up=10000, down=10000):
 
 def analysis_genomic_element(ratio_txt, element, out, up=10000, down=10000):
     matrix = extract_signal(ratio_txt, element, Path(out), up, down)
+
+
+def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down=50):
+    ratio_txt_csi = ratio_txt + '.csi'
+    if not Path(ratio_txt_csi).exists():
+        raise FileNotFoundError(f"{ratio_txt_csi} not exist!")
+    center_file = load_center(element)
+    tabix_file = pysam.TabixFile(ratio_txt, index=ratio_txt_csi)
+    header = tabix_file.header[0]
+    cols = header.split('\t')
+    sample_count = len(cols) - 3
+    with open(out_matrix, 'w') as fo:
+        fo.write(header)
+        finals = []
+        total = len(center_file)
+        start = time.time()
+        idx = 0
+        for v in center_file.values:
+            if idx % 10000 == 0:
+                print(f"index {idx}/{total}, pass {round(time.time() - start)} s")
+            idx += 1
+            region = f'{v[0]}:{int(v[1]) + up}-{int(v[2]) + down}'
+            _iterator = tabix_file.fetch(region=region)
+            lines = []
+            for line in _iterator:
+                line = line.strip().split('\t')
+                lines.append([float(x) for x in line[3:]])
+            if len(lines):
+                m = np.array(lines)
+                m[m == -1] = np.nan
+                m = np.nanmean(m, axis=0)
+            else:
+                m = np.array([np.nan] * sample_count)
+            finals.append(m)
+        finals = np.array(finals)
+        finals = np.nanmean(finals, axis=0)
+        out_items = cols[0:3] + [str(round(x, 4)) for x in finals]
+        fo.write('\t'.join(out_items) + '\n')
 
 
 if __name__ == '__main__':
