@@ -1,4 +1,5 @@
 library(dplyr)
+library(GenomicRanges)
 library(readxl)
 
 
@@ -68,6 +69,46 @@ saveImage <- function(file,...){
 
 removeNegativeOne <- function(m){
   m[rowSums(m[,4:ncol(m)]==-1)==0,]
+}
+
+
+feature2Bed<-function(feature) {
+  bed<-do.call(rbind,lapply(feature, function(x){
+    tmp<-strsplit(x,':')[[1]]
+    se<-strsplit(tmp[2],'-')[[1]]
+    c(tmp[1], se[1], se[2])
+  }))
+  bed<-data.frame(bed)
+  bed[,2]<-as.numeric(bed[,2])
+  bed[,3]<-as.numeric(bed[,3])
+  colnames(bed)<-c('chrom','start','end')
+  bed
+}
+
+feature2GRanges<-function(feature){
+  bed2GRanges(feature2Bed(feature))
+}
+
+bed2Feature<-function(bed){
+  paste(paste(bed[,1], bed[,2], sep=':'),bed[,3],sep='-')
+}
+
+bed2GRanges<-function(bed){
+  gr<-GRanges(seqnames = bed[,1], ranges = IRanges(start = bed[,2]+1, end =  bed[,3]))
+  if (ncol(bed)>=4){
+    .<-lapply(colnames(bed)[4:ncol(bed)],function(x){
+      mcols(gr)[[x]]<<-bed[[x]]
+    })
+  }
+  gr
+}
+
+GRanges2bed<-function(gr){
+  data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr))
+}
+GRanges2Feature<-function(gr){
+  bed<-data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr))
+  bed2Feature(bed)
 }
 ################################################################################
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
