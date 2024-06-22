@@ -1,3 +1,4 @@
+import os.path
 import sys
 import argparse
 import numpy as np
@@ -35,19 +36,12 @@ def mcomp_dmc_filter(dmc_file, matrix_bed, target_samples, dmc_file_filtered=Non
     header = tabix_file.header[0]
     header_items = header.strip().split('\t')
     samples = pd.Series(header_items[3:])
-    fo.write(header + "\n")
+    fo.write('\t'.join(dmc.columns) + "\n")
     i = 0  # the number of DMCs processed
     j = 0  # the number of DMCs passed the filter
     total = dmc.shape[0]  # the total number of DMCs
     start = time.time()
     for item in dmc.values:
-        if i % 1000 == 0:
-            passed_seconds = round(time.time() - start)
-            processed_r = round(i / total, 4)
-            keep_r = round(j / (i + 0.000001), 4)
-            if verbose:
-                sys.stderr.write(
-                    f'Processed {i}/{total}={processed_r}\tkeep {j}/{i}={keep_r}\tpassed {passed_seconds}s\n')
         fold_change = item[10]
         iterator = tabix_file.fetch(region=f'{item[0]}:{item[1]}-{item[2]}')
         try:
@@ -76,6 +70,13 @@ def mcomp_dmc_filter(dmc_file, matrix_bed, target_samples, dmc_file_filtered=Non
             fo.write('\t'.join([str(x) for x in item]) + '\n')
             j = j + 1
         i += 1
+        if i % 10000 == 0:
+            passed_seconds = round(time.time() - start)
+            processed_r = round(i / total, 3)
+            keep_r = round(j / (i), 4)
+            if verbose:
+                sys.stderr.write(
+                    f'Processed {i}/{total}={processed_r}\tkeep {j}/{i}={keep_r}\tpassed {passed_seconds}s\n')
     fo.close()
 
 
@@ -127,7 +128,7 @@ def get_args():
                                    help=get_param_from_doc('matrix_bed', mcomp_dmc_filter))
     parser_dmc_filter.add_argument('-t', '--target-samples', required=True,
                                    help=get_param_from_doc('target_samples',
-                                                           mcomp_dmc_filter) + " The samples should split by ',', such as: sample1,sample2,sample3")
+                                                           mcomp_dmc_filter) + " These sample names support two format. 1) The samples should split by ',', such as: sample1,sample2,sample3. 2) Store in a file, each line is a sample name")
     parser_dmc_filter.add_argument('-p', '--percentile', default=0.8, type=float,
                                    help=get_param_from_doc('percentile', mcomp_dmc_filter))
     parser_dmc_filter.add_argument('-k', '--minimum-keep', default=0.8, type=float,
@@ -144,7 +145,11 @@ def get_args():
 def main():
     args = get_args()
     if args.sub == 'dmc-filter':
-        target_samples = args.target_samples.split(',')
+        if os.path.exists(args.target_samples):
+            with open(args.target_samples) as f:
+                target_samples = [x.strip() for x in f.readlines()]
+        else:
+            target_samples = args.target_samples.split(',')
         mcomp_dmc_filter(args.input, args.matrix_bed, target_samples, args.output, args.percentile, args.minimum_keep,
                          args.verbose)
     elif args.sub == 'reverse':
