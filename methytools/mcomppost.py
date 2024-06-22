@@ -9,17 +9,15 @@ from pathlib import Path
 from .utils import get_param_from_doc
 
 
-def mcomp_dmc_filter(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None, percentile=0.8,
-                     minimum_sample_keep_ratio=0.8, verbose=True):
+def add_percentile(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None, minimum_sample_keep_ratio=0.8,
+                   verbose=True):
     """
-    This tool is employed to further refine and filter the DMCs identified by MOABS:mcomp.
+    Add percentile columns the DMCs identified by MOABS:mcomp.
 
     :param dmc_file: the dmc files generate by mcomp.
     :param matrix_bed: the bed format methylation matrix. This file should bed compressed by bgzip and index in csi format.
     :param target_samples: the names of samples in target group. This names should appear in the header of *matrix_bed*.
     :param dmc_file_filtered: the filtered dmc file. If not set, it will print to stdout.
-    :param percentile: The p-th percentile of the low methylation group will be compared with the (1−p)-th percentile
-                    of the high methylation group. If the former is less than the latter, the condition is satisfied.
     :param minimum_sample_keep_ratio: The minimum proportion of each group (target group) that must be retained.
                                     A sample will be removed if its value is -1.
     :param verbose: whether to print log to stderr
@@ -36,9 +34,11 @@ def mcomp_dmc_filter(dmc_file, matrix_bed, target_samples, dmc_file_filtered=Non
     header = tabix_file.header[0]
     header_items = header.strip().split('\t')
     samples = pd.Series(header_items[3:])
-    fo.write('\t'.join(dmc.columns) + "\n")
+    dmc_new_header = dmc.columns.to_list()
+    dmc_new_header += ['percentile']
+    percentiles = [i / 100 for i in reversed(range(0, 101, 1))]
+    fo.write('\t'.join(dmc_new_header) + "\n")
     i = 0  # the number of DMCs processed
-    j = 0  # the number of DMCs passed the filter
     total = dmc.shape[0]  # the total number of DMCs
     start = time.time()
     for item in dmc.values:
@@ -60,23 +60,23 @@ def mcomp_dmc_filter(dmc_file, matrix_bed, target_samples, dmc_file_filtered=Non
         if len(target_keep) / len(target) < minimum_sample_keep_ratio or len(background_keep) / len(
                 background) < minimum_sample_keep_ratio:
             continue
-        if fold_change < 0:
-            left = target_keep.quantile(percentile)
-            right = background_keep.quantile(1 - percentile)
-        else:
-            left = background_keep.quantile(percentile)
-            right = target_keep.quantile(1 - percentile)
-        if left < right:
-            fo.write('\t'.join([str(x) for x in item]) + '\n')
-            j = j + 1
+        for percentile in percentiles:
+            if fold_change < 0:
+                left = target_keep.quantile(percentile)
+                right = background_keep.quantile(1 - percentile)
+            else:
+                left = background_keep.quantile(percentile)
+                right = target_keep.quantile(1 - percentile)
+            if left < right:
+                fo.write('\t'.join([str(x) for x in item] + [str(percentile)]) + '\n')
+                break
         i += 1
         if i % 10000 == 0:
             passed_seconds = round(time.time() - start)
             processed_r = round(i / total, 3)
-            keep_r = round(j / (i), 4)
             if verbose:
                 sys.stderr.write(
-                    f'Processed {i}/{total}={processed_r}\tkeep {j}/{i}={keep_r}\tpassed {passed_seconds}s\n')
+                    f'Processed {i}/{total}={processed_r}\tpassed {passed_seconds}s\n')
     fo.close()
 
 
@@ -119,22 +119,20 @@ def get_args():
     subparsers = parser.add_subparsers(dest='sub', required=True, title='command', description='The available commands',
                                        help='select a sub command to use')
     # ==================================================================================================================
-    parser_dmc_filter = subparsers.add_parser('dmc-filter',
-                                              help='This command is employed to further refine and filter the DMC files')
-    parser_dmc_filter.add_argument('-i', '--input', required=True,
-                                   help=get_param_from_doc('dmc_file', mcomp_dmc_filter))
-    parser_dmc_filter.add_argument('-o', '--output', help=get_param_from_doc('dmc_file_filtered', mcomp_dmc_filter))
-    parser_dmc_filter.add_argument('-m', '--matrix-bed', required=True,
-                                   help=get_param_from_doc('matrix_bed', mcomp_dmc_filter))
-    parser_dmc_filter.add_argument('-t', '--target-samples', required=True,
+    parser_percentile = subparsers.add_parser('percentile',
+                                              help='This command is employed to add percentile columns to the DMC files')
+    parser_percentile.add_argument('-i', '--input', required=True,
+                                   help=get_param_from_doc('dmc_file', add_percentile))
+    parser_percentile.add_argument('-o', '--output', help=get_param_from_doc('dmc_file_filtered', add_percentile))
+    parser_percentile.add_argument('-m', '--matrix-bed', required=True,
+                                   help=get_param_from_doc('matrix_bed', add_percentile))
+    parser_percentile.add_argument('-t', '--target-samples', required=True,
                                    help=get_param_from_doc('target_samples',
-                                                           mcomp_dmc_filter) + " These sample names support two format. 1) The samples should split by ',', such as: sample1,sample2,sample3. 2) Store in a file, each line is a sample name")
-    parser_dmc_filter.add_argument('-p', '--percentile', default=0.8, type=float,
-                                   help=get_param_from_doc('percentile', mcomp_dmc_filter))
-    parser_dmc_filter.add_argument('-k', '--minimum-keep', default=0.8, type=float,
-                                   help=get_param_from_doc('minimum_sample_keep_ratio', mcomp_dmc_filter))
-    parser_dmc_filter.add_argument('-v', '--verbose', default=True,
-                                   help=get_param_from_doc('verbose', mcomp_dmc_filter))
+                                                           add_percentile) + " These sample names support two format. 1) The samples should split by ',', such as: sample1,sample2,sample3. 2) Store in a file, each line is a sample name")
+    parser_percentile.add_argument('-k', '--minimum-keep', default=0.8, type=float,
+                                   help=get_param_from_doc('minimum_sample_keep_ratio', add_percentile))
+    parser_percentile.add_argument('-v', '--verbose', default=True,
+                                   help=get_param_from_doc('verbose', add_percentile))
     # ==================================================================================================================
     parser_reverse = subparsers.add_parser('reverse', help='Modify the orientation of the group comparison')
     parser_reverse.add_argument('-i', '--input', required=True, help=get_param_from_doc('input_file', reverse_dmc_file))
@@ -145,13 +143,14 @@ def get_args():
 def main():
     args = get_args()
     if args.sub == 'dmc-filter':
+        pass
+    elif args.sub == 'percentile':
         if os.path.exists(args.target_samples):
             with open(args.target_samples) as f:
                 target_samples = [x.strip() for x in f.readlines()]
         else:
             target_samples = args.target_samples.split(',')
-        mcomp_dmc_filter(args.input, args.matrix_bed, target_samples, args.output, args.percentile, args.minimum_keep,
-                         args.verbose)
+        add_percentile(args.input, args.matrix_bed, target_samples, args.output, args.minimum_keep, args.verbose)
     elif args.sub == 'reverse':
         reverse_dmc_file(args.input, args.output)
     else:

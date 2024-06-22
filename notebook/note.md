@@ -17,30 +17,11 @@ methytools region-methy -i /mnt/d/data/epiLungCancer/raw/merge.d3.all.bed.gz -e 
 methytools region-methy -i /mnt/d/data/epiLungCancer/raw/merge.d3.all.bed.gz -e tss -o ./tmp/signal.tss_n3900_n4000.matrix.bed -u -4000 -d -3900
 ```
 
-# Further filtering of mcomp dmc results (mcomppost dmc-filter)
-## 80 percentile
+# Further filtering of mcomp dmc results (mcomppost percentile)
 ```shell
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.CTL.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.filtered_80.txt -p 0.8
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUAD.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.filtered_80.txt -p 0.8
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUSC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.filtered_80.txt -p 0.8
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LCC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.filtered_80.txt -p 0.8
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.SCLC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.filtered_80.txt -p 0.8
-```
-## 85 percentile
-```shell
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.CTL.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.filtered_85.txt -p 0.85
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUAD.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.filtered_85.txt -p 0.85
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUSC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.filtered_85.txt -p 0.85
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LCC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.filtered_85.txt -p 0.85
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.SCLC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.filtered_85.txt -p 0.85
-```
-## 90 percentile
-```shell
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.CTL.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.filtered_90.txt -p 0.90
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUAD.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.filtered_90.txt -p 0.90
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUSC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.filtered_90.txt -p 0.90
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LCC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LCC.filtered_90.txt -p 0.90
-mcomppost dmc-filter -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.SCLC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.SCLC.filtered_90.txt -p 0.90
+mcomppost percentile -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.CTL.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.percentile.txt
+mcomppost percentile -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUAD.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUAD.percentile.txt
+mcomppost percentile -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -t ./tmp/sample.LUSC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC.percentile.txt
 ```
 # Reverse the direction of comparison (mcomppost reverse)
 ```shell
