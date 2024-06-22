@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="methytools",
     packages=find_packages(),
-    version="0.0.4",
+    version="0.0.5",
     author="Department of research and development, Zhejiang Gaomei Genomics",
     author_email="it@gomicsgene.com",
     description="methytools is a BS-seq analysis tool suite",
@@ -21,7 +21,7 @@ setup(
     install_requires=['pandas', 'pysam'],
     entry_points={
         'console_scripts': [
-            'methytools=methytools:main',
+            'methytools=methytools.methytools:main',
             'mcomppost=methytools.mcomppost:main',
         ],
     },
