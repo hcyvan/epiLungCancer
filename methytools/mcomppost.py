@@ -45,7 +45,7 @@ def add_percentile(dmc_file, matrix_bed, target_samples, background_samples=None
     start = time.time()
     for item in dmc.values:
         fold_change = item[10]
-        iterator = tabix_file.fetch(region=f'{item[0]}:{item[1]}-{item[2]}')
+        iterator = tabix_file.fetch(reference=item[0], start=item[1], end=item[2])
         try:
             line = next(iterator)
         except StopIteration:
@@ -134,7 +134,7 @@ def get_args():
     parser_percentile.add_argument('-t', '--target-samples', required=True,
                                    help=get_param_from_doc('target_samples',
                                                            add_percentile) + " These sample names support two format. 1) The samples should split by ',', such as: sample1,sample2,sample3. 2) Store in a file, each line is a sample name")
-    parser_percentile.add_argument('-b', '--background-samples', required=True,
+    parser_percentile.add_argument('-b', '--background-samples',
                                    help=get_param_from_doc('background_samples',
                                                            add_percentile) + " The input format refer to target_sample")
     parser_percentile.add_argument('-k', '--minimum-keep', default=0.8, type=float,

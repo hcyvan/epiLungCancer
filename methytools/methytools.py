@@ -1,4 +1,5 @@
 import argparse
+import sys
 import pysam
 import gzip
 from importlib import resources
@@ -85,7 +86,7 @@ def extract_signal(ratio_txt, element, out_matrix, up=10000, down=10000):
 
 
 def analysis_genomic_element(ratio_txt, element, out, up=10000, down=10000):
-    matrix = extract_signal(ratio_txt, element, Path(out), up, down)
+    extract_signal(ratio_txt, element, Path(out), up, down)
 
 
 def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down=50):
@@ -125,13 +126,47 @@ def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down
         fo.write('\t'.join([str(round(x, 4)) for x in finals]) + '\n')
 
 
+def extract_methylation_from_methylation_matrix(matrix_bed, region_bed, output_file):
+    matrix_bed = Path(matrix_bed)
+    matrix_bed_csi = matrix_bed.with_suffix('.gz.csi')
+    tabix_file = pysam.TabixFile(str(matrix_bed), index=matrix_bed_csi)
+    if output_file:
+        fo = open(output_file, 'w')
+    else:
+        fo = sys.stdout
+    with open(region_bed) as fin:
+        for line in fin:
+            if line.startswith('#'):
+                continue
+            line = line.strip()
+            items = line.split('\t')
+            # !!! when use param region: 1-based; when use param reference+start+end: 0-based !!!
+            iterator = tabix_file.fetch(reference=items[0], start=int(items[1]), end=int(items[2]))
+            rows = []
+            for row in iterator:
+                rows.append(row)
+            if len(rows) == 0:
+                continue
+            elif len(rows) == 1:
+                fo.write(rows[0] + "\n")
+            else:
+                rows_float = []
+                for row in rows:
+                    rows_float.append([float(x) for x in row.split('\t')[3:]])
+                data = np.array(rows_float)
+                data[data == -1] = np.nan
+                data = np.nanmean(data, axis=0)
+                data[np.isnan(data)] = -1
+                fo.write('\t'.join(items[0:3] + [str(round(x, 3)) for x in data]) + '\n')
+
+
 def main():
-    parser = argparse.ArgumentParser(description='Tools for processing methylation data')
+    parser = argparse.ArgumentParser(description='Generate genomic signal file')
     subparsers = parser.add_subparsers(dest='sub', required=True, title='command', description='The available commands',
                                        help='select a sub command to use')
     # =====================================================================
     parser_signal = subparsers.add_parser('signal',
-                                          help='Extract the signal value of a region in the genome')
+                                          help='Extract the methylation from a genome region')
     parser_signal.add_argument('-i', '--input', required=True, help='The input bed ratio file with header')
     parser_signal.add_argument('-e', '--element', choices=['tss', 'cgi'], default='tss', help='tss or cgi')
     parser_signal.add_argument('-u', '--up', default=10000, type=int, help='tss upstream')
@@ -140,7 +175,7 @@ def main():
     parser_signal.add_argument('-v', '--version', action='version', version='0.1')
     # =====================================================================
     parser_region_methy = subparsers.add_parser('region-methy',
-                                                help='Extract the signal value of a region in the genome')
+                                                help='Extract the mean methylation in a genomic region')
     parser_region_methy.add_argument('-i', '--input', required=True, help='The input bed ratio file with header')
     parser_region_methy.add_argument('-e', '--element', choices=['tss', 'cgi'], default='tss', help='tss or cgi')
     parser_region_methy.add_argument('-u', '--up', default=-50, type=int,
@@ -149,6 +184,13 @@ def main():
                                      help='the right bounder to the center, center is 0,left is negative, right is positive')
     parser_region_methy.add_argument('-o', '--out', help='The output signal file')
     parser_region_methy.add_argument('-v', '--version', action='version', version='0.1')
+    # =====================================================================
+    parser_extract = subparsers.add_parser('extract',
+                                           help='Extract methylation from the bed format methylation matrix')
+    parser_extract.add_argument('-i', '--input', required=True, help='The input bed format regions')
+    parser_extract.add_argument('-m', '--matrix-bed', required=True,
+                                help='the bed format methylation matrix. This file should bed compressed by bgzip and index in csi format')
+    parser_extract.add_argument('-o', '--output', help='The output file. If not set, it will print to stdout')
 
     args = parser.parse_args()
     if args.sub == 'signal':
@@ -158,6 +200,8 @@ def main():
             analysis_genomic_element_from_gz(args.input, args.element, args.out, args.up, args.down)
         else:
             raise Exception("You should input a bgziped and indexed bed file")
+    elif args.sub == 'extract':
+        extract_methylation_from_methylation_matrix(args.matrix_bed, args.input, args.output)
     else:
         parser.print_help()
 
