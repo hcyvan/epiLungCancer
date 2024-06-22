@@ -9,7 +9,13 @@ class Sample:
         df = pd.read_excel(CONFIG.DataRaw / 'SupplementaryData.xlsx', sheet_name='sample')
         self.table = pd.concat([df[df['Group'] == g] for g in self.groups], axis=0)
 
-    def get_samples(self):
+    def get_samples(self, group=None):
+        ret = self.table[['SampleName', 'Group']]
+        if group:
+            ret = ret[ret['Group'] == group]
+        return ret
+
+    def get_samples_(self):
         return self.table[['SampleName', 'Group', 'WGBS_data']]
 
     def old_name2new(self, old_name):
