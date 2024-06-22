@@ -9,7 +9,8 @@ from pathlib import Path
 from .utils import get_param_from_doc
 
 
-def add_percentile(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None, minimum_sample_keep_ratio=0.8,
+def add_percentile(dmc_file, matrix_bed, target_samples, background_samples=None, dmc_percentile_file=None,
+                   minimum_sample_keep_ratio=0.8,
                    verbose=True):
     """
     Add percentile columns the DMCs identified by MOABS:mcomp.
@@ -17,7 +18,8 @@ def add_percentile(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None,
     :param dmc_file: the dmc files generate by mcomp.
     :param matrix_bed: the bed format methylation matrix. This file should bed compressed by bgzip and index in csi format.
     :param target_samples: the names of samples in target group. This names should appear in the header of *matrix_bed*.
-    :param dmc_file_filtered: the filtered dmc file. If not set, it will print to stdout.
+    :param background_samples: the names of samples in background group. If not set, samples not in target_samples are considered background_samples.
+    :param dmc_percentile_file: Added percentile column to dmc file. If not set, it will print to stdout.
     :param minimum_sample_keep_ratio: The minimum proportion of each group (target group) that must be retained.
                                     A sample will be removed if its value is -1.
     :param verbose: whether to print log to stderr
@@ -26,8 +28,8 @@ def add_percentile(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None,
     matrix_bed = Path(matrix_bed)
     matrix_bed_csi = matrix_bed.with_suffix('.gz.csi')
     dmc = pd.read_csv(dmc_file, sep='\t')
-    if dmc_file_filtered:
-        fo = open(dmc_file_filtered, 'w')
+    if dmc_percentile_file:
+        fo = open(dmc_percentile_file, 'w')
     else:
         fo = sys.stdout
     tabix_file = pysam.TabixFile(str(matrix_bed), index=matrix_bed_csi)
@@ -52,7 +54,10 @@ def add_percentile(dmc_file, matrix_bed, target_samples, dmc_file_filtered=None,
         full = pd.Series([float(x) for x in line[3:]])
         full[full == -1] = np.nan
         target = full[samples.isin(target_samples)]
-        background = full[~samples.isin(target_samples)]
+        if background_samples is None:
+            background = full[~samples.isin(target_samples)]
+        else:
+            background = full[samples.isin(background_samples)]
         target_keep = target[~target.isna()]
         background_keep = background[~background.isna()]
         if len(target) == 0 or len(background) == 0:
@@ -129,6 +134,9 @@ def get_args():
     parser_percentile.add_argument('-t', '--target-samples', required=True,
                                    help=get_param_from_doc('target_samples',
                                                            add_percentile) + " These sample names support two format. 1) The samples should split by ',', such as: sample1,sample2,sample3. 2) Store in a file, each line is a sample name")
+    parser_percentile.add_argument('-b', '--background-samples', required=True,
+                                   help=get_param_from_doc('background_samples',
+                                                           add_percentile) + " The input format refer to target_sample")
     parser_percentile.add_argument('-k', '--minimum-keep', default=0.8, type=float,
                                    help=get_param_from_doc('minimum_sample_keep_ratio', add_percentile))
     parser_percentile.add_argument('-v', '--verbose', default=True,
@@ -150,7 +158,16 @@ def main():
                 target_samples = [x.strip() for x in f.readlines()]
         else:
             target_samples = args.target_samples.split(',')
-        add_percentile(args.input, args.matrix_bed, target_samples, args.output, args.minimum_keep, args.verbose)
+        background_samples = args.background_samples
+        if background_samples is not None:
+            if os.path.exists(background_samples):
+                with open(background_samples) as f:
+                    background_samples = [x.strip() for x in f.readlines()]
+            else:
+                background_samples = background_samples.split(',')
+
+        add_percentile(args.input, args.matrix_bed, target_samples, background_samples, args.output, args.minimum_keep,
+                       args.verbose)
     elif args.sub == 'reverse':
         reverse_dmc_file(args.input, args.output)
     else:

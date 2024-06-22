@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="methytools",
     packages=find_packages(),
-    version="0.0.3",
+    version="0.0.4",
     author="Department of research and development, Zhejiang Gaomei Genomics",
     author_email="it@gomicsgene.com",
     description="methytools is a BS-seq analysis tool suite",
