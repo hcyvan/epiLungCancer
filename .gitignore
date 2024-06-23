@@ -1,6 +1,7 @@
 .idea
 
 config.yaml
+README.html
 
 .Rproj.user
 .Rhistory
