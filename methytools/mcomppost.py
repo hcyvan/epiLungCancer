@@ -38,6 +38,7 @@ def add_percentile(dmc_file, matrix_bed, target_samples, background_samples=None
     samples = pd.Series(header_items[3:])
     dmc_new_header = dmc.columns.to_list()
     dmc_new_header += ['percentile']
+    # The percentile of low methylated group
     percentiles = [i / 100 for i in reversed(range(0, 101, 1))]
     fo.write('\t'.join(dmc_new_header) + "\n")
     i = 0  # the number of DMCs processed

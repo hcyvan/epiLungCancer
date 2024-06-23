@@ -134,6 +134,7 @@ def extract_methylation_from_methylation_matrix(matrix_bed, region_bed, output_f
         fo = open(output_file, 'w')
     else:
         fo = sys.stdout
+    fo.write(tabix_file.header[0]+'\n')
     with open(region_bed) as fin:
         for line in fin:
             if line.startswith('#'):
