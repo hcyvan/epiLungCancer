@@ -1,20 +1,19 @@
 # epiLungCancer
 
-Lung Cancer data analysis
+This project houses the source code for our research on lung cancer methylation.
+Alongside data processing scripts, it encompasses two distinct sub-projects:
+
+- [methytools](./methytools): Developed for processing BS-seq methylation data.
+- [easyepi](./easyepi): Houses commonly used R methods in epigenetic research.
+
+These projects are designed to potentially serve as independent entities
+in the future.
 
 ## Usage
+### Configuring the data directory
 
-copy config.yaml.tpl to config.yaml and complete the configuration according to the local environment
+copy config.yaml.tpl to config.yaml and complete the configuration according to
+the local environment
 
-## methytools
-### Source code
-Download the source code from the public repository [Github](https://github.com/hcyvan/epiLungCancer)
-``` 
-cd /path/to/source/code
-python ./setup.py install
-```
-### Install from repository
-#### Install from the master branch
-```
-pip install git+https://e.coding.net/gomicsgene2/lung_cancer_yixing/epiLungCancer.git
-```
+## Cite Us
+TODO
