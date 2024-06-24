@@ -14,8 +14,6 @@ library(ggplot2)
 #' @examples
 #' figPercentileMethy
 #' @export
-
-
 figPercentileMethy<-function(target, background, is.hypo=TRUE,p=0.8, ylab="",title="") {
   target<-unlist(target)
   background<-unlist(background)

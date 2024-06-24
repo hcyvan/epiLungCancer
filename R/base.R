@@ -67,56 +67,30 @@ saveImage <- function(file,...){
   }
 }
 
+saveBed<-function(bed,outfile){
+  if (!startsWith(colnames(bed)[1], '#')){
+    colnames(bed)[1]<-paste0('#',colnames(bed)[1])
+  }
+  write.table(bed,outfile,sep = '\t',quote = FALSE,row.names = FALSE)
+}
+
 removeNegativeOne <- function(m){
   m[rowSums(m[,4:ncol(m)]==-1)==0,]
 }
 
 
-feature2Bed<-function(feature) {
-  bed<-do.call(rbind,lapply(feature, function(x){
-    tmp<-strsplit(x,':')[[1]]
-    se<-strsplit(tmp[2],'-')[[1]]
-    c(tmp[1], se[1], se[2])
-  }))
-  bed<-data.frame(bed)
-  bed[,2]<-as.numeric(bed[,2])
-  bed[,3]<-as.numeric(bed[,3])
-  colnames(bed)<-c('chrom','start','end')
-  bed
-}
-
-feature2GRanges<-function(feature){
-  bed2GRanges(feature2Bed(feature))
-}
-
-bed2Feature<-function(bed){
-  paste(paste(bed[,1], bed[,2], sep=':'),bed[,3],sep='-')
-}
-
-bed2GRanges<-function(bed){
-  gr<-GRanges(seqnames = bed[,1], ranges = IRanges(start = bed[,2]+1, end =  bed[,3]))
-  if (ncol(bed)>=4){
-    .<-lapply(colnames(bed)[4:ncol(bed)],function(x){
-      mcols(gr)[[x]]<<-bed[[x]]
-    })
-  }
-  gr
-}
-
-GRanges2bed<-function(gr){
-  data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr))
-}
-GRanges2Feature<-function(gr){
-  bed<-data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr))
-  bed2Feature(bed)
-}
 ################################################################################
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
 COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
 names(COLOR_MAP_GROUP)<-FACTOR_LEVEL_GROUP
 SHAPE_MAP_GROUP=c(16,15,17,10, 7)
 names(SHAPE_MAP_GROUP)<-FACTOR_LEVEL_GROUP
-
+HUMAN_CHROMSOME <- c(
+  "chr1", "chr2", "chr3", "chr4", "chr5", "chr6", "chr7", 
+  "chr8", "chr9", "chr10", "chr11", "chr12", "chr13", "chr14", 
+  "chr15", "chr16", "chr17", "chr18", "chr19", "chr20", "chr21", 
+  "chr22", "chrX", "chrY", "chrM"
+)
 
 
 g2color<-function(group,alpha=NULL){
