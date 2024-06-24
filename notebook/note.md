@@ -19,8 +19,7 @@ methytools region-methy -i /mnt/d/data/epiLungCancer/raw/merge.d3.all.bed.gz -e 
 # Extract methylation from the bed format methylation matrix
 
 ```shell
-methytools extract -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.percentile.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz
-methytools extract -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.percentile.txt -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.bed
+methytools extract -i /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -o /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.beta.bed
 ```
 
 # Further filtering of mcomp dmc results (mcomppost percentile)
@@ -32,4 +31,8 @@ mcomppost percentile -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.LUSC
 # Reverse the direction of comparison (mcomppost reverse)
 ```shell
 mcomppost reverse -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.CTL.vs.LUAD_LUSC_LCC_SCLC.txt -o /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.Rest.vs.CTL.txt
+```
+# Merge DMCs into DMRs (mcomppost dmc2dmr)
+```shell
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/one2rest.dmr.bed
 ```
