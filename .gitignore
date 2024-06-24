@@ -15,3 +15,7 @@ R/local/*
 out/
 auxil
 notebook/img/
+
+*.pdf
+*.synctex.gz
+*.bbl

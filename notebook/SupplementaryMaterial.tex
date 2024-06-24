@@ -1,27 +1,112 @@
 % Preamble
-\documentclass[11pt]{article}
+\documentclass[10pt]{article}
 \title{Supplementary Material}
+\author{Yihang Cheng}
 \date{\today}
 % Packages
 \usepackage{amsmath}
 \usepackage{graphicx}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
 % Document
 \begin{document}
-    \maketitle
+\maketitle
 
 
-    \section{Method}\label{sec:method}
+\section{Method}\label{sec:method}
 
-    \subsection{Find the differentially methylated CpGs}\label{subsec:find-the-differentially-methylated-cpgs-(dmcs)}
+\subsection{Find the differentially methylated CpGs}\label{subsec:find-the-differentially-methylated-cpgs-(dmcs)}
 
-    We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening.
+We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various
+subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening. The target group and Background
+group are shown in the following table\ref*{tab:grouping}.
 
-    \begin{figure}[htbp]
-        \centering
-        \includegraphics[width=1\linewidth]{./img/dmcPercentileVsKeepProp}
-        \caption{The remaining DMC propertion after filtering with different percentiles}
-        \label{fig:dmc}
-    \end{figure}
+\begin{table}[htbp]
+    \begin{center}
+        \caption{ Grouping of One-vs-Rest }
+        \begin{tabular}{|c|c|}
+            \hline
+            Target & Background            \\
+            \hline
+            CTL    & LUAD, LUSC, LCC, SCLC \\
+            LUAD   & CTL, LUSC, LCC, SCLC  \\
+            LUSC   & CTL, LUAD, LCC, SCLC  \\
+            LCC    & CTL, LUAD, LUSC, SCLC \\
+            SCLC   & CTL, LUAD, LUSC, LCC  \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \label{tab:grouping}
+\end{table}
+
+Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group (Table \ref{tab:table_dmc_ount}).
+Subsequently, duplicated differentially methylated CpG sites (DMCs) across multiple groups were excluded, leaving
+only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
+
+\begin{table}[htbp]
+    \begin{center}
+        \caption{The count of DMCs find by MOABS}
+        \begin{tabular}{|c|c|c|}
+            \hline
+            \multirow{2}{*}{Group} & \multicolumn{2}{c|}{Remove multiple DMCs}           \\
+            \cline{2-3}            & Befor                                     & After   \\
+            \hline
+            CTL vs. Rest           & 584239                                    & 145200  \\
+            LUAD vs. Rest          & 95999                                     & 31299   \\
+            LUSC vs. Rest          & 427525                                    & 326642  \\
+            LCC vs. Rest           & 1361568                                   & 1090432 \\
+            SCLC vs. Rest          & 3022977                                   & 2349828 \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \label{tab:table_dmc_ount}
+\end{table}
+
+A more stringent strategy was then used for further screening of DMCs. We evaluate the \textit{p}-th percentile of low-methylated group
+and the \textit{1 - p}-th percentile of high-methylated group. In hypermethylated DMCs, the \textit{p}-th percentile of the target
+group and the \textit{1 - p}-th percentile of the background are calculated; conversely, in hypomethylated DMCs, this relationship is
+reversed. If the \textit{p}-th percentile of the low-methylated group is not less than or equal to \textit{1-p}-th percentile of the
+high-methylated group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.8\linewidth]{./img/dmcPercentileCut.png}
+    \caption{The 85-th percentile of target and background samples in a hypomethylated DMCs}
+    \label{fig:dmcPC}
+\end{figure}
+
+In this study, we developed MethyTools, a comprehensive toolbox for processing BS-seq data. \emph{mcomppost percentile} can be used to calculate
+the percentile of each CpGs.
+
+\begin{lstlisting}[language=sh, caption={}]
+mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
+                     -m ./merge.d3.all.bed.gz \
+                     -t ./sample.CTL.txt \
+                     -o ./dmc.Rest.vs.CTL.percentile.txt
+\end{lstlisting}
+
+Utilizing \emph{mcomppost}, we conducted an analysis of the DMCs within each group. As the percentile increased, the number of retained DMCs 
+decreased significantly (Figure \ref*{fig:dmcPK}). By selecting an appropriate percentile (\textit{p}) threshold, we can identify DMCs that more stringently adhere to 
+group specificity.
+
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=1\linewidth]{./img/dmcPercentileVsKeepProp}
+    \caption{The remaining DMC propertion after filtering with different percentiles}
+    \label{fig:dmcPK}
+\end{figure}
+
+\section{Code availability}\label{sec:code}
+
+The analysis code of this artile a available in Github repository \href{https://github.com/hcyvan/epiLungCancer}{epiLungCancer}. The
+sub project of epiLungCancer, \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}},  was developed to process
+BS-seq methylation data.
+
+
 
 \bibliographystyle{plain}
 \bibliography{SupplymentaryMaterialReference}
