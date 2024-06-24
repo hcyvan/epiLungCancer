@@ -12,3 +12,6 @@ tmp
 .DS_Store
 *.egg-info
 R/local/*
+out/
+auxil
+notebook/img/

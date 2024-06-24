@@ -1,0 +1,28 @@
+% Preamble
+\documentclass[11pt]{article}
+\title{Supplementary Material}
+\date{\today}
+% Packages
+\usepackage{amsmath}
+\usepackage{graphicx}
+% Document
+\begin{document}
+    \maketitle
+
+
+    \section{Method}\label{sec:method}
+
+    \subsection{Find the differentially methylated CpGs}\label{subsec:find-the-differentially-methylated-cpgs-(dmcs)}
+
+    We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening.
+
+    \begin{figure}[htbp]
+        \centering
+        \includegraphics[width=1\linewidth]{./img/dmcPercentileVsKeepProp}
+        \caption{The remaining DMC propertion after filtering with different percentiles}
+        \label{fig:dmc}
+    \end{figure}
+
+\bibliographystyle{plain}
+\bibliography{SupplymentaryMaterialReference}
+\end{document}
