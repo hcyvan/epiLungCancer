@@ -7,6 +7,7 @@ library(circlize)
 library(ggplot2)
 library(gridExtra)
 library(easyepi)
+library(rGREAT)
 #----------------------------------------------------------------------------------------------------------------------
 # 
 #----------------------------------------------------------------------------------------------------------------------
@@ -141,11 +142,11 @@ multiInterAll(one2rest)
 #'=============================================================================
 one2restRmMulti<-removeMultiDMC(one2rest)
 multiInterAll(one2restRmMulti)
-saveRDS(one2restRmMulti,file.path(CONFIG$DataInter, 'one2rest.0.rds'))
+saveRDS(one2restRmMulti,file.path(CONFIG$DataInter, 'dmc','one2rest.0.rds'))
 #'=============================================================================
 #' Filter out DMCs by p-th percentile
 #'=============================================================================
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'one2rest.0.rds'))
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest.0.rds'))
 p1<-plotPercentileVsKeepProp(one2rest$RestvCTL$percentile, COLOR_MAP_GROUP[1],'CTL')
 p2<-plotPercentileVsKeepProp(one2rest$RestvLUAD$percentile, COLOR_MAP_GROUP[2],'LUAD')
 p3<-plotPercentileVsKeepProp(one2rest$RestvLUSC$percentile, COLOR_MAP_GROUP[3],'LUSC')
@@ -155,33 +156,47 @@ png(filename = "./notebook/img/dmcPercentileVsKeepProp.png", width = 8, height =
 grid.arrange(p1,p2,p3,p4,p5, nrow = 1)
 dev.off()
 
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'one2rest.0.rds'))
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest.0.rds'))
+multiInterAll(one2rest)
 one2rest<-filterDmc(one2rest, percentile = 0.8)
 multiInterAll(one2rest)
-saveRDS(one2rest,file.path(CONFIG$DataInter, 'one2rest.rds'))
+saveRDS(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
+one2rest<-filterDmc(one2rest, percentile = 0.85)
+multiInterAll(one2rest)
+saveRDS(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest85.rds'))
+one2rest<-filterDmc(one2rest, percentile = 0.90)
+multiInterAll(one2rest)
+saveRDS(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest90.rds'))
 #'=============================================================================
 #' Generate a file containing DMCs for the extraction of CpGs methylation 
 #' levels and the identification of differentially methylated regions (DMRs).
 #' - methytools extract: extract of the CpGs methylation levels
 #' - mcomppost dmc2dmr: merge DMCs into DMRs
 #'=============================================================================
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'one2rest.rds'))
-one2restDf<-do.call(rbind,lapply(names(one2rest), function(x){
-  out<-one2rest[[x]]
-  out$group<-x
-  return(out)
-}))
-one2restDf$chrom<-factor(one2restDf$chrom,levels = HUMAN_CHROMSOME)
-one2restDf<-arrange(one2restDf,chrom,start)
-out<-one2restDf[,1:3]
-out$class<-paste(one2restDf$class, one2restDf$group,sep = '.')
-out$start <- format(out$start, scientific = FALSE)
-out$end <- format(out$end, scientific = FALSE)
-saveBed(out,file.path(CONFIG$DataInter, 'one2rest.dmc.bed'))
+outputDMC<-function(one2rest, outfile){
+  one2restDf<-do.call(rbind,lapply(names(one2rest), function(x){
+    out<-one2rest[[x]]
+    out$group<-x
+    return(out)
+  }))
+  one2restDf$chrom<-factor(one2restDf$chrom,levels = HUMAN_CHROMSOME)
+  one2restDf<-arrange(one2restDf,chrom,start)
+  out<-one2restDf[,1:3]
+  out$class<-paste(one2restDf$class, one2restDf$group,sep = '.')
+  out$start <- format(out$start, scientific = FALSE)
+  out$end <- format(out$end, scientific = FALSE)
+  saveBed(out,outfile)
+}
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
+outputDMC(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest80.dmc.bed'))
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest85.rds'))
+outputDMC(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest85.dmc.bed'))
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest90.rds'))
+outputDMC(one2rest,file.path(CONFIG$DataInter, 'dmc','one2rest90.dmc.bed'))
 #'----------------------------------------------------------------------------------------------------------------------
 #' Count of DMCs
 #'----------------------------------------------------------------------------------------------------------------------
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'one2rest.rds'))
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
 count<-sapply(one2rest, function(x){
   table(x$class)
 })
@@ -207,13 +222,12 @@ dev.off()
 #'----------------------------------------------------------------------------------------------------------------------
 #' DMC heatmap
 #'----------------------------------------------------------------------------------------------------------------------
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'one2rest.rds'))
-
+one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
 
 plotTopkHeatmap<-function(class='hypo', top=2000){
   hypo1000<-filterDmc(one2rest, class=class,top=top)
   multiInterAll(hypo1000)
-  one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'one2rest.dmc.beta.bed'),header = TRUE,ext='bed')
+  one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'dmc','one2rest.dmc.beta.bed'),header = TRUE,ext='bed')
   features<-bed2feature(one2rest.dmc.beta)
   hypo1000M<-lapply(hypo1000, function(x){
     one2rest.dmc.beta[match(bed2feature(x),features),-c(1:3)]
@@ -254,26 +268,137 @@ dev.off()
 saveImage("dmc.heatmap.hyper.top1000.pdf",width = 5,height = 3.8)
 plotTopkHeatmap('hyper',1000)
 dev.off()
+#'----------------------------------------------------------------------------------------------------------------------
+#' DMR
+#' mcomppost dmc2dmr -i D:/data/epiLungCancer/intermediate/dmc/one2rest80.dmc.bed -o D:/data/epiLungCancer/intermediate/dmc/one2rest80.dmr.py.bed
+#'----------------------------------------------------------------------------------------------------------------------
+tag<-'one2rest80'
+dmr<-loadData(file.path(CONFIG$DataInter, 'dmc',sprintf('%s.dmr.py.bed',tag)),header = FALSE,ext='bed')
+dmr$group<-sapply(strsplit(dmr$V4,'\\.'),function(x){substr(x[2],6, nchar(x[2]))})
+dmr$class<-sapply(strsplit(dmr$V4,'\\.'),function(x){x[1]})
+dmr<-dplyr::select(dmr, chrom=V1, start=V2, end=V3, group, class, count=V5,length=V6)
+saveBed(dmr,file.path(CONFIG$DataInter, 'dmc',sprintf('%s.dmr.bed',tag)))
+dmrList<-list()
+for(g in FACTOR_LEVEL_GROUP){
+  dmrSubList<-list()
+  for(t in c('hypo','hyper')){
+    dmr.tmp<-filter(dmr, class==t, group==g)
+    file.name=paste0(sprintf('%s.',tag),g,'.',t,'.dmr.bed')
+    saveBed(dmr.tmp,file.path(CONFIG$DataInter, 'dmc',file.name))
+    dmrSubList[[t]]<-dmr.tmp
+  }
+  dmrList[[g]]<-dmrSubList
+}
+saveRDS(dmrList,file.path(CONFIG$DataInter, 'dmc',sprintf('%s.dmr.list.rds',tag)))
+#----------------------------------------------------------------------------------------------------------------------
+# DMR counts
+#----------------------------------------------------------------------------------------------------------------------
+genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
+dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmr.list.rds'))
 
+countGenomeDist<-function(bed){
+  gr<-bed2gr(bed)
+  sapply(genomicRegion, function(gr1){
+    sum(countOverlaps(gr, gr1)!=0)
+  })
+}
+dmrHypoCountInGenome<-sapply(names(dmrList), function(x){
+  dmr<-dmrList[[x]][['hypo']]
+  countGenomeDist(dmr)
+})%>%t
+dmrHyperCountInGenome<-sapply(names(dmrList), function(x){
+  dmr<-dmrList[[x]][['hyper']]
+  countGenomeDist(dmr)
+})%>%t
+dmrHypoCount<-sapply(names(dmrList), function(x){
+  dmr<-dmrList[[x]][['hypo']]
+  nrow(dmr)
+})
+dmrHyperCount<-sapply(names(dmrList), function(x){
+  dmr<-dmrList[[x]][['hyper']]
+  nrow(dmr)
+})
+dmrHypoCount<-data.frame(dmrHypoCount,dmrHypoCountInGenome)
+dmrHyperCount<-data.frame(dmrHyperCount,dmrHyperCountInGenome)
+write.csv(dmrHypoCount,file.path(CONFIG$DataResult,'table','dmr.hypo.count.csv'))
+write.csv(dmrHyperCount,file.path(CONFIG$DataResult,'table','dmr.hyper.count.csv'))
+#----------------------------------------------------------------------------------------------------------------------
+# DMR Density near TSS and CGI
+#----------------------------------------------------------------------------------------------------------------------
+genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
+dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmr.list.rds'))
+cgIslands.gr<-genomicRegion$cgIslands
+tss.gr<-genomicRegion$tss
 
+plot.dmr.density<-function(class,target.gr, lim,title="",xlab="Distance"){
+  dist<-lapply(dmrList, function(x){
+    bed<-x[[class]]
+    distTo<-annoDistQueryToSubject(bed2gr(bed),target.gr)
+    distTo
+  })
+  
+  dens<-lapply(dist,function(x){
+    d0<-x[abs(x$distanceToSubject)<lim,]
+    density(d0$distanceToSubject)
+  })
+  xlim<-range(sapply(dens, "[", "x"))
+  ylim<-range(sapply(dens, "[", "y"))
+  plot(NA, main = title,
+       xlab = xlab,
+       ylab = "DMRs Density",
+       xlim=xlim,
+       ylim=ylim)
+  for(i in 1:length(COLOR_MAP_GROUP)) {
+    lines(dens[[names(COLOR_MAP_GROUP)[i]]], lwd = 2,col=COLOR_MAP_GROUP[i])
+  }
+  legend("topleft", legend=names(COLOR_MAP_GROUP), fill=COLOR_MAP_GROUP, bty = "n")
+}
+saveImage("dmr.density.genomicRegion.pdf",width = 5,height = 5.6)
+par(mfrow = c(2, 2))
+plot.dmr.density('hypo',tss.gr, lim=5000, "Hypo",xlab='Distance to TSS')
+plot.dmr.density('hypo',cgIslands.gr, lim=5000,title="Hypo",xlab='Distance to CGI')
+plot.dmr.density('hyper',tss.gr, lim=5000, "Hyper",xlab='Distance to TSS')
+plot.dmr.density('hyper',cgIslands.gr, lim=5000, "Hyper",xlab='Distance to CGI')
+dev.off()
+#'----------------------------------------------------------------------------------------------------------------------
+#' GREAT analysis
+#'----------------------------------------------------------------------------------------------------------------------
+dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmr.list.rds'))
+greatBP<-lapply(names(dmrList), function(x){
+  lapply(names(dmrList[[x]]), function(y){
+    dmr<-dmrList[[x]][[y]]
+    print(paste(x, y))
+    gr<-bed2GRanges(dmr)
+    great(gr, "GO:BP", "TxDb.Hsapiens.UCSC.hg38.knownGene")
+  })
+})
+names(greatBP)<-FACTOR_LEVEL_GROUP
+for(g in FACTOR_LEVEL_GROUP){
+  names(greatBP[[g]])<-c('hypo','hyper')
+}
+#saveRDS(greatBP,file.path(CONFIG$DataInter, 'dmc','great','one2rest80.dmr.list.greatBP.rds'))
+greatBP<-readRDS(file.path(CONFIG$DataInter, 'dmc','great','one2rest80.dmr.list.greatBP.rds'))
+res<-greatBP$CTL$hypo
+getEnrichmentTable(res)
+getRegionGeneAssociations(res)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+greatBPtb<-do.call(rbind,lapply(names(greatBP), function(group){
+  hypo<-greatBP[[group]][['hypo']]
+  hypo<-getEnrichmentTable(hypo)
+  hypo$class<-'hypo'
+  hypo$group<-group
+  hypo$key<-paste(group,'hypo',sep='.')
+  hyper<-greatBP[[group]][['hyper']]
+  hyper<-getEnrichmentTable(hyper)
+  hyper$class<-'hyper'
+  hyper$group<-group
+  hyper$key<-paste(group,'hyper',sep='.')
+  out<-rbind(hypo,hyper)
+  out<-filter(out,p_adjust<=0.01,p_adjust_hyper<=0.01)
+}))
+write.csv(greatBPtb,file.path(CONFIG$DataInter,'dmc','great','dmr.greatBP.csv'),row.names = FALSE)
+greatBPtbTop<-do.call(rbind,lapply(split(greatBPtb,greatBPtb$key), function(x){
+  x[1:20,]
+}))
+write.csv(greatBPtbTop,file.path(CONFIG$DataInter,'dmc','great','dmr.greatBP.top.csv'),row.names = FALSE)
 

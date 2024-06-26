@@ -19,3 +19,4 @@ notebook/img/
 *.pdf
 *.synctex.gz
 *.bbl
+.snakemake

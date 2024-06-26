@@ -34,5 +34,44 @@ mcomppost reverse -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.CTL.vs.LUAD_LUS
 ```
 # Merge DMCs into DMRs (mcomppost dmc2dmr)
 ```shell
-mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/one2rest.dmr.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest80.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest80.dmr.py.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest85.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest85.dmr.py.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest90.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest90.dmr.py.bed
+```
+# Homer
+```shell
+nohup findMotifsGenome.pl ../one2rest80.CTL.hypo.dmr.bed hg38 ./CTL.hypo -mask > nohup.CTL.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LUAD.hypo.dmr.bed hg38 ./LUAD.hypo -mask > nohup.LUAD.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LUSC.hypo.dmr.bed hg38 ./LUSC.hypo -mask > nohup.LUSC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LCC.hypo.dmr.bed hg38 ./LCC.hypo -mask > nohup.LCC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.SCLC.hypo.dmr.bed hg38 ./SCLC.hypo -mask > nohup.SCLC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.CTL.hyper.dmr.bed hg38 ./CTL.hyper -mask > nohup.CTL.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LUAD.hyper.dmr.bed hg38 ./LUAD.hyper -mask > nohup.LUAD.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LUSC.hyper.dmr.bed hg38 ./LUSC.hyper -mask > nohup.LUSC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.LCC.hyper.dmr.bed hg38 ./LCC.hyper -mask > nohup.LCC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest80.SCLC.hyper.dmr.bed hg38 ./SCLC.hyper -mask > nohup.SCLC.hyper.log  2>&1 &
+```
+```shell
+nohup findMotifsGenome.pl ../one2rest85.CTL.hypo.dmr.bed hg38 ./CTL.hypo -mask > nohup.CTL.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LUAD.hypo.dmr.bed hg38 ./LUAD.hypo -mask > nohup.LUAD.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LUSC.hypo.dmr.bed hg38 ./LUSC.hypo -mask > nohup.LUSC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LCC.hypo.dmr.bed hg38 ./LCC.hypo -mask > nohup.LCC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.SCLC.hypo.dmr.bed hg38 ./SCLC.hypo -mask > nohup.SCLC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.CTL.hyper.dmr.bed hg38 ./CTL.hyper -mask > nohup.CTL.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LUAD.hyper.dmr.bed hg38 ./LUAD.hyper -mask > nohup.LUAD.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LUSC.hyper.dmr.bed hg38 ./LUSC.hyper -mask > nohup.LUSC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.LCC.hyper.dmr.bed hg38 ./LCC.hyper -mask > nohup.LCC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest85.SCLC.hyper.dmr.bed hg38 ./SCLC.hyper -mask > nohup.SCLC.hyper.log  2>&1 &
+```
+```shell
+nohup findMotifsGenome.pl ../one2rest90.CTL.hypo.dmr.bed hg38 ./CTL.hypo -mask > nohup.CTL.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LUAD.hypo.dmr.bed hg38 ./LUAD.hypo -mask > nohup.LUAD.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LUSC.hypo.dmr.bed hg38 ./LUSC.hypo -mask > nohup.LUSC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LCC.hypo.dmr.bed hg38 ./LCC.hypo -mask > nohup.LCC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.SCLC.hypo.dmr.bed hg38 ./SCLC.hypo -mask > nohup.SCLC.hypo.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.CTL.hyper.dmr.bed hg38 ./CTL.hyper -mask > nohup.CTL.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LUAD.hyper.dmr.bed hg38 ./LUAD.hyper -mask > nohup.LUAD.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LUSC.hyper.dmr.bed hg38 ./LUSC.hyper -mask > nohup.LUSC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.LCC.hyper.dmr.bed hg38 ./LCC.hyper -mask > nohup.LCC.hyper.log  2>&1 &
+nohup findMotifsGenome.pl ../one2rest90.SCLC.hyper.dmr.bed hg38 ./SCLC.hyper -mask > nohup.SCLC.hyper.log  2>&1 &
 ```
