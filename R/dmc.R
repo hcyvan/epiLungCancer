@@ -9,7 +9,6 @@ library(gridExtra)
 library(easyepi)
 library(rGREAT)
 #----------------------------------------------------------------------------------------------------------------------
-# 
 #----------------------------------------------------------------------------------------------------------------------
 getDmcFromMcomp<-function(mcomp.file, reverse=FALSE, has.percentile=FALSE){
   mcompDMC<-loadData(mcomp.file,header = TRUE,ext='bed')
@@ -227,7 +226,7 @@ one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
 plotTopkHeatmap<-function(class='hypo', top=2000){
   hypo1000<-filterDmc(one2rest, class=class,top=top)
   multiInterAll(hypo1000)
-  one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'dmc','one2rest.dmc.beta.bed'),header = TRUE,ext='bed')
+  one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmc.beta.bed'),header = TRUE,ext='bed')
   features<-bed2feature(one2rest.dmc.beta)
   hypo1000M<-lapply(hypo1000, function(x){
     one2rest.dmc.beta[match(bed2feature(x),features),-c(1:3)]
@@ -401,4 +400,72 @@ greatBPtbTop<-do.call(rbind,lapply(split(greatBPtb,greatBPtb$key), function(x){
   x[1:20,]
 }))
 write.csv(greatBPtbTop,file.path(CONFIG$DataInter,'dmc','great','dmr.greatBP.top.csv'),row.names = FALSE)
+#'=============================================================================
+#' plot
+#'=============================================================================
+library(readxl)
+library(ggplot2)
+
+data0<-read_xlsx(file.path(CONFIG$DataInter,'dmc','great','dmr.greatBP.final.xlsx'))
+data<-dplyr::select(data0, description=description, group=key,fc=fold_enrichment_hyper, p=p_adjust_hyper)
+data<-as.data.frame(data)
+data$nlogp<--log(data$p)
+colorMap<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0','#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
+names(colorMap)<-c('CTL.hypo','LUAD.hypo','LUSC.hypo','LCC.hypo','SCLC.hypo','CTL.hyper','LUAD.hyper','LUSC.hyper','LCC.hyper','SCLC.hyper')
+data$group<-factor(data$group, levels = names(colorMap))
+data$description<-factor(data$description, levels = rev(data$description))
+saveImage("dmr.great.pdf",width = 7,height = 6)
+ggplot(data,aes(x=group,y=description,size=nlogp,fill=group))+
+  scale_fill_manual(values=colorMap)+
+  geom_point(shape=21,color = "transparent")+
+  theme(panel.background = element_blank(),
+        panel.grid = element_line("gray"),
+        panel.border = element_rect(colour = "black",fill=NA))
+dev.off()
+#'----------------------------------------------------------------------------------------------------------------------
+#' HOMER analysis
+#'----------------------------------------------------------------------------------------------------------------------
+fc<-1.3
+q<-0.01
+CTL.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/CTL.hypo'),q, fc)
+LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LUAD.hypo'),q, fc)
+LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LUSC.hypo'),q, fc)
+LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LCC.hypo'),q, fc)
+SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/SCLC.hypo'),q, fc)
+CTL.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/CTL.hyper'),q, fc)
+LUAD.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LUAD.hyper'),q, fc)
+LUSC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LUSC.hyper'),q, fc)
+LCC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/LCC.hyper'),q, fc)
+SCLC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/homer80/SCLC.hyper'),q, fc)
+
+
+fmg<-list(
+  CTL.hypo=CTL.hypo,
+  LUAD.hypo=LUAD.hypo,
+  LUSC.hypo=LUSC.hypo,
+  LCC.hypo=LCC.hypo,
+  SCLC.hypo=SCLC.hypo,
+  CTL.hyper=CTL.hyper,
+  LUAD.hyper=LUAD.hyper,
+  LUSC.hyper=LUSC.hyper,
+  LCC.hyper=LCC.hyper,
+  SCLC.hyper=SCLC.hyper
+)
+
+output<-lapply(names(fmg), function(n){
+  x<-fmg[[n]]
+  if(nrow(x)>10){
+    out<-x[1:20,]
+  }else{
+    out<-x
+  }
+  if (nrow(out)>0){
+    out$class<-n
+  }
+  out
+})
+output<-do.call(rbind, output)
+write.csv(output,file.path(CONFIG$DataInter,'dmc','homer80','dmr.homer80.top.csv'),row.names = FALSE)
+
+
 
