@@ -1,0 +1,23 @@
+---
+title: "easyepi"
+author: "Yihang Cheng"
+date: "2024-06-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## How tow buid and install
+
+```{r include=FALSE}
+library(roxygen2)
+roxygenize("../easyepi")
+devtools::install("../easyepi")
+```
+
+## How to used
+```{r include=FALSE}
+library(easyepi)
+```
