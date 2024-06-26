@@ -16,8 +16,14 @@ library(roxygen2)
 roxygenize("../easyepi")
 devtools::install("../easyepi")
 ```
-
+## How to remove
+```{r include=FALSE}
+remove.packages("easyepi")
+```
 ## How to used
 ```{r include=FALSE}
 library(easyepi)
 ```
+## How to comment function
+Press the shortcut keys Ctrl + Alt + Shift + R (Windows and Linux) or
+Cmd + Option + Shift + R (Mac).
