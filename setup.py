@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name="methytools",
     packages=find_packages(),
-    version="0.0.5",
+    version="0.0.6",
     author="Department of research and development, Zhejiang Gaomei Genomics",
     author_email="it@gomicsgene.com",
     description="methytools is a BS-seq analysis tool suite",
@@ -23,6 +23,7 @@ setup(
         'console_scripts': [
             'methytools=methytools.methytools:main',
             'mcomppost=methytools.mcomppost:main',
+            'homerhelper=methytools.homerhelper:main',
         ],
     },
     py_modules=[],
