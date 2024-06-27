@@ -14,11 +14,43 @@
 % Document
 \begin{document}
 \maketitle
+\newpage
+\tableofcontents
+\newpage
+\section{Software tools developed in this study}\label{sec:software-develope}
+The analysis algorithms and methodologies employed in this paper were integrated into two tool sets:
 
+\begin{itemize}
+    \item  \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}}: 
+    \item \href{https://github.com/hcyvan/pattools}{\textit{pattools}}: 
+\end{itemize}
 
-\section{Method}\label{sec:method}
+\subsection{methytools}\label{sec:software-develope-methytools}
 
-\subsection{Find the differentially methylated CpGs}\label{subsec:find-the-differentially-methylated-cpgs-(dmcs)}
+methytools is a toolkit developed for processing BS-seq methylation data.
+
+\subsubsection{mcomppost percentile}
+
+\emph{mcomppost percentile} can be used to calculate the percentile of each CpGs and add percentile columns to the DMCs files.
+
+\begin{lstlisting}[language=sh, caption={}]
+mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
+                     -m ./merge.d3.all.bed.gz \
+                     -t ./sample.CTL.txt \
+                     -o ./dmc.Rest.vs.CTL.percentile.txt
+\end{lstlisting}
+
+\subsection{pattools}\label{sec:software-develope-pattools}
+
+pattools is a toolkit based on PAT format\cite{Loyfer2024.05.08.593132} data, inheriting both existing methylation algorithms and incorporating new ones.
+{pattools} is currently under development, and the algorithms from this toolkit are primarily utilized in this study. The
+ software will be introduced in a forthcoming paper.
+
+ \subsubsection{pattools vector}
+
+\section{Selection of subtype-specific DMCs}\label{sec:selection-of-dmcs}
+
+\subsection{One-vs-Rest}
 
 We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various
 subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening. The target group and Background
@@ -41,6 +73,8 @@ group are shown in the following table\ref*{tab:grouping}.
     \end{center}
     \label{tab:grouping}
 \end{table}
+
+\subsection{MOABS mcomp}
 
 Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group (Table \ref{tab:table_dmc_ount}).
 Subsequently, duplicated differentially methylated CpG sites (DMCs) across multiple groups were excluded, leaving
@@ -65,11 +99,15 @@ only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
     \label{tab:table_dmc_ount}
 \end{table}
 
-A more stringent strategy was then used for further screening of DMCs. We evaluate the \textit{p}-th percentile of low-methylated group
-and the \textit{1 - p}-th percentile of high-methylated group. In hypermethylated DMCs, the \textit{p}-th percentile of the target
-group and the \textit{1 - p}-th percentile of the background are calculated; conversely, in hypomethylated DMCs, this relationship is
-reversed. If the \textit{p}-th percentile of the low-methylated group is not less than or equal to \textit{1-p}-th percentile of the
-high-methylated group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
+\subsection{\textit{p}-th percentile algorithm}
+
+A more stringent strategy was then used for further screening of DMCs. We evaluate the 
+\textit{p}-th percentile of low-methylated group and the (\textit{100 - p})-th percentile
+of high-methylated group. In hypermethylated DMCs, the \textit{p}-th percentile of the target
+group and the (\textit{100 - p})-th percentile of the background are calculated; conversely,
+in hypomethylated DMCs, this relationship is reversed. If the \textit{p}-th percentile of the
+low-methylated group is less than or equal to (\textit{100-p})-th percentile of the high-methylated
+group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
 
 \begin{figure}[htbp]
     \centering
@@ -78,17 +116,7 @@ high-methylated group, we assert that this DMCs adheres to our screening criteri
     \label{fig:dmcPC}
 \end{figure}
 
-In this study, we developed MethyTools, a comprehensive toolbox for processing BS-seq data. \emph{mcomppost percentile} can be used to calculate
-the percentile of each CpGs.
-
-\begin{lstlisting}[language=sh, caption={}]
-mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
-                     -m ./merge.d3.all.bed.gz \
-                     -t ./sample.CTL.txt \
-                     -o ./dmc.Rest.vs.CTL.percentile.txt
-\end{lstlisting}
-
-Utilizing \emph{mcomppost}, we conducted an analysis of the DMCs within each group. As the percentile increased, the number of retained DMCs 
+Utilizing \emph{mcomppost}, we conducted an analysis of the DMCs within each group. As the \textit{p}-th percentile increased, the number of retained DMCs 
 decreased significantly (Figure \ref*{fig:dmcPK}). By selecting an appropriate percentile (\textit{p}) threshold, we can identify DMCs that more stringently adhere to 
 group specificity.
 
