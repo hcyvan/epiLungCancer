@@ -45,6 +45,13 @@ fviz_pca_ind(res.pca,repel = TRUE,label="none",col.ind=SAMPLE$table$Group,palett
   theme_classic()+
   theme(plot.title = element_blank())
 dev.off()
+
+#----------------------------------------------------------------------------------------------------------------------
+# The confidence interval of bisufite conversion ratio and CpGs depth
+#----------------------------------------------------------------------------------------------------------------------
+data<-read_excel(file.path(CONFIG$DataRaw, 'SupplementaryData.xlsx'),sheet = 'qc')
+printConfidenceInterval(bisulfite_conversion_ratio)
+printConfidenceInterval(cg_depth)
 #----------------------------------------------------------------------------------------------------------------------
 # Figure 1C: The Average DNA methylation level of samples in each group
 #----------------------------------------------------------------------------------------------------------------------
