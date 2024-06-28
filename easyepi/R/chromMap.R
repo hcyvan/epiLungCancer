@@ -1,6 +1,6 @@
 library(ggplot2)
 library(dplyr)
-source('arrayTobed.R')
+# source('arrayTobed.R')
 # chromMap----------------------------------------------------------------------
 #' Chromosome Mapping and Correlation Plotting Function
 #'
@@ -14,9 +14,9 @@ source('arrayTobed.R')
 #' @param value A numeric vector representing the value data for correlation calculation.
 #' @param format A character string indicating the format of the input data. Supported formats are 'bed' and 'array'.
 #' @param chip A character string specifying the methylation chip type. Supported chips are '40K', '450K', and '850K'.
-#' @threshold A threshold of value, if set, will indicate the corresponding label on the graph, which is the row name of df.
-#' @xlab The xlab of x axis
-#' @ylab The ylab of y axis
+#' @param threshold A threshold of value, if set, will indicate the corresponding label on the graph, which is the row name of df.
+#' @param xlab The xlab of x axis
+#' @param ylab The ylab of y axis
 #' @export
 
 chromMap <- function(df, value, format = 'bed', chip, threshold, xlab = 'Chromosome', ylab = 'value'){
