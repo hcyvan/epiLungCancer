@@ -28,7 +28,7 @@ chromMap <- function(df, value, format = 'bed', chip, threshold, xlab = 'Chromos
     df <- df[!grepl("chrX", df$chr), ]
     df <- df[!grepl("chrY", df$chr), ]
   }
-  
+  colnames(df)[1] <- 'chr'
   spec_value <- data.frame(lable = rownames(df), value = value, 
                         chr = gsub("[^0-9]", "", (df$chr)) %>% as.numeric(),
                         mapinfo = df$start+1)
@@ -85,7 +85,7 @@ chromMap <- function(df, value, format = 'bed', chip, threshold, xlab = 'Chromos
     geom_hline(yintercept = 0, color = "black", linewidth = 2) +
     geom_hline(yintercept = c(round(ymax/3,1), -round(ymax/3,1), round(ymax*2/3,1), -round(ymax*2/3,1), ymax, -ymax), 
                color = "grey", linewidth = c(1, 1, 1, 1, 1, 1))
-  if(!missing(chip) && !is.null(threshold)){
+  if(!missing(threshold) && !is.null(threshold)){
     p <- p+
       ggrepel::geom_text_repel(data = subset(spec_value, abs(value) > threshold),
                                aes(label = lable), 
