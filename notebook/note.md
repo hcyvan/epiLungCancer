@@ -34,9 +34,9 @@ mcomppost reverse -i /mnt/d/data/epiLungCancer/raw/moabs/dmc/dmc.CTL.vs.LUAD_LUS
 ```
 # Merge DMCs into DMRs (mcomppost dmc2dmr)
 ```shell
-mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest80.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest80.dmr.py.bed
-mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest85.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest85.dmr.py.bed
-mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest90.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/one2rest90.dmr.py.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/p80/one2rest80.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/p80/one2rest80.dmr.py.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/p85/one2rest85.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/p85/one2rest85.dmr.py.bed
+mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/p90/one2rest90.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/p90/one2rest90.dmr.py.bed
 ```
 # Homer
 ```shell
