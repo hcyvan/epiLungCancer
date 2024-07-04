@@ -3,4 +3,4 @@ from .base import Sample
 
 SAMPLE = Sample()
 
-__all__ = ['SAMPLE', 'CONFIG']
+__all__ = ['SAMPLE', 'CONFIG',Sample]

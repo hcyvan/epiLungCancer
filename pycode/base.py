@@ -1,5 +1,5 @@
 import pandas as pd
-from py.config import CONFIG
+from pycode.config import CONFIG
 
 
 class Sample:
