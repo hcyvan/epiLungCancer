@@ -78,7 +78,27 @@ removeNegativeOne <- function(m){
   m[rowSums(m[,4:ncol(m)]==-1)==0,]
 }
 
-
+#' print the confidence interval of an array
+#'
+#' @param data the target data array 
+#' @param conf.level the confidence level
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' data <- c(2.3, 3.1, 2.8, 3.6, 3.2, 3.8, 3.0, 2.9, 3.4)
+#' printConfidenceInterval(data, conf.level = 0.9) 
+#' 
+#' [1] "3.1222 (90% CI: 2.8437 - 3.4008)"
+#' 
+printConfidenceInterval<-function(data, conf.level=0.95){
+  test<-t.test(data, conf.level = conf.level)
+  v<-test$estimate
+  conf.int<-test$conf.int
+  conf<-attributes(conf.int)$conf.level*100
+  sprintf("%.4f (%d%% CI: %.4f - %.4f)", v, conf,conf.int[1],conf.int[2])
+}
 ################################################################################
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
 COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')

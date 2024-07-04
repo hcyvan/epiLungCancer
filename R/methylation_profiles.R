@@ -12,8 +12,31 @@ library(FactoMineR)
 library(factoextra)
 library(Rtsne)
 
+
 #----------------------------------------------------------------------------------------------------------------------
-# Figure 1B: t-SNE analysis of all lung cancer samples
+# Figure 1B: cluster of all lung cancer samples
+#----------------------------------------------------------------------------------------------------------------------
+methy10x<-readRDS(file.path(CONFIG$DataRaw, 'merge.d10.one.bed.rds'))
+set.seed(100)
+idx<-sample(1:nrow(methy10x),200000)
+m<-methy10x[idx, 4:ncol(methy10x)]
+dist_mm<-dist(t(m))
+hclust_avg <- hclust(dist_mm,method='ward.D2')
+dend <- as.dendrogram(hclust_avg)
+labels_colors(dend) <- SAMPLE$table$Color[order.dendrogram(dend)]
+plot(dend)
+
+saveImage("methylation.level.cluster.pdf",width = 8,height = 8)
+phyl<-as.phylo(hclust_avg)
+plot(phyl, type = "fan",tip.color=SAMPLE$table$Color,label.offset=15)
+tiplabels(pch=21, col="black", adj=0, bg=SAMPLE$table$Color, cex=2)
+dev.off()
+saveImage("methylation.level.cluster.legend.pdf",width = 5,height = 3)
+plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
+legend("topleft", legend =names(COLOR_MAP_GROUP),pch=16, pt.cex=3, cex=1.5, bty='n',col = COLOR_MAP_GROUP,horiz=TRUE)
+dev.off()
+#----------------------------------------------------------------------------------------------------------------------
+# Figure 1C: t-SNE analysis of all lung cancer samples
 #----------------------------------------------------------------------------------------------------------------------
 methy10x<-readRDS(file.path(CONFIG$DataRaw, 'merge.d10.one.bed.rds'))
 set.seed(100)
@@ -46,7 +69,13 @@ fviz_pca_ind(res.pca,repel = TRUE,label="none",col.ind=SAMPLE$table$Group,palett
   theme(plot.title = element_blank())
 dev.off()
 #----------------------------------------------------------------------------------------------------------------------
-# Figure 1C: The Average DNA methylation level of samples in each group
+# The confidence interval of bisufite conversion ratio and CpGs depth
+#----------------------------------------------------------------------------------------------------------------------
+data<-read_excel(file.path(CONFIG$DataRaw, 'SupplementaryData.xlsx'),sheet = 'qc')
+printConfidenceInterval(bisulfite_conversion_ratio)
+printConfidenceInterval(cg_depth)
+#----------------------------------------------------------------------------------------------------------------------
+# Figure 1D: The Average DNA methylation level of samples in each group
 #----------------------------------------------------------------------------------------------------------------------
 data<-read_excel(file.path(CONFIG$DataRaw, 'SupplementaryData.xlsx'),sheet = 'qc')
 
@@ -74,7 +103,7 @@ ggplot(data=data,aes(x=group,y=ratio,fill=group))+
 dev.off()
 
 #----------------------------------------------------------------------------------------------------------------------
-# Figure 1D: The methylation level density distribution of CTL.vs.LUAD, CTL.vs.LUAC, CTL.vs.LCC and CTL.vs.SCLC
+# Figure 1E: The methylation level density distribution of CTL.vs.LUAD, CTL.vs.LUAC, CTL.vs.LCC and CTL.vs.SCLC
 #----------------------------------------------------------------------------------------------------------------------
 ratio <- loadData(file.path(CONFIG$DataRaw, 'merge.group.3x.all.bed'),header = TRUE)
 ratio<-removeNegativeOne(ratio)
@@ -97,7 +126,7 @@ drawDensity(ratio$CTL,ratio$SCLC,g2color('CTL',0.7),g2color('SCLC',0.7))
 dev.off()
 
 #----------------------------------------------------------------------------------------------------------------------
-# Figure 1E. Methylation level of CpGs within 5,000 bp upstream and downstream relative to CGI and TSS
+# Figure 1F. Methylation level of CpGs within 5,000 bp upstream and downstream relative to CGI and TSS
 #----------------------------------------------------------------------------------------------------------------------
 #==============================================================================================================
 # Part 1
@@ -196,28 +225,7 @@ plot.region.methy('signal.tss_p3900_p4000.matrix.bed')
 dev.off()
 
 
-#----------------------------------------------------------------------------------------------------------------------
-# Figure S1: cluster of all lung cancer samples
-#----------------------------------------------------------------------------------------------------------------------
-methy10x<-readRDS(file.path(CONFIG$DataRaw, 'merge.d10.one.bed.rds'))
-set.seed(100)
-idx<-sample(1:nrow(methy10x),200000)
-m<-methy10x[idx, 4:ncol(methy10x)]
-dist_mm<-dist(t(m))
-hclust_avg <- hclust(dist_mm,method='ward.D2')
-dend <- as.dendrogram(hclust_avg)
-labels_colors(dend) <- SAMPLE$table$Color[order.dendrogram(dend)]
-plot(dend)
 
-saveImage("methylation.level.cluster.pdf",width = 8,height = 8)
-phyl<-as.phylo(hclust_avg)
-plot(phyl, type = "fan",tip.color=SAMPLE$table$Color,label.offset=15)
-tiplabels(pch=21, col="black", adj=0, bg=SAMPLE$table$Color, cex=2)
-dev.off()
-saveImage("methylation.level.cluster.legend.pdf",width = 5,height = 3)
-plot(NULL ,xaxt='n',yaxt='n',bty='n',ylab='',xlab='', xlim=0:1, ylim=0:1)
-legend("topleft", legend =names(COLOR_MAP_GROUP),pch=16, pt.cex=3, cex=1.5, bty='n',col = COLOR_MAP_GROUP,horiz=TRUE)
-dev.off()
 
 
 
