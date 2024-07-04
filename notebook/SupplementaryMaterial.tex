@@ -11,6 +11,7 @@
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \usepackage{listings}
 \usepackage{xcolor}
+\usepackage{threeparttable}
 % Document
 \begin{document}
 \maketitle
@@ -21,8 +22,8 @@
 The analysis algorithms and methodologies employed in this paper were integrated into two tool sets:
 
 \begin{itemize}
-    \item  \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}}: 
-    \item \href{https://github.com/hcyvan/pattools}{\textit{pattools}}: 
+    \item  \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}}:
+    \item \href{https://github.com/hcyvan/pattools}{\textit{pattools}}:
 \end{itemize}
 
 \subsection{methytools}\label{sec:software-develope-methytools}
@@ -42,11 +43,12 @@ mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
 
 \subsection{pattools}\label{sec:software-develope-pattools}
 
-pattools is a toolkit based on PAT format\cite{Loyfer2024.05.08.593132} data, inheriting both existing methylation algorithms and incorporating new ones.
-{pattools} is currently under development, and the algorithms from this toolkit are primarily utilized in this study. The
- software will be introduced in a forthcoming paper.
+pattools is a toolkit based on PAT format\cite{Loyfer2024.05.08.593132} data, inheriting both existing
+methylation algorithms and incorporating new ones.
+    {pattools} is currently under development, and the algorithms from this toolkit are primarily utilized
+in this study. The software will be introduced in a forthcoming paper.
 
- \subsubsection{pattools vector}
+\subsubsection{pattools vector}
 
 \section{Selection of subtype-specific DMCs}\label{sec:selection-of-dmcs}
 
@@ -59,7 +61,7 @@ group are shown in the following table\ref*{tab:grouping}.
 \begin{table}[htbp]
     \begin{center}
         \caption{ Grouping of One-vs-Rest }
-        \begin{tabular}{|c|c|}
+        \begin{tabular}{|l|l|}
             \hline
             Target & Background            \\
             \hline
@@ -72,6 +74,7 @@ group are shown in the following table\ref*{tab:grouping}.
         \end{tabular}
     \end{center}
     \label{tab:grouping}
+
 \end{table}
 
 \subsection{MOABS mcomp}
@@ -83,25 +86,34 @@ only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
 \begin{table}[htbp]
     \begin{center}
         \caption{The count of DMCs find by MOABS}
-        \begin{tabular}{|c|c|c|}
-            \hline
-            \multirow{2}{*}{Group} & \multicolumn{2}{c|}{Remove multi-group and sex-chromesome DMCs}           \\
-            \cline{2-3}            & Befor                                     & After   \\
-            \hline
-            CTL vs. Rest           & 584239                                    & 139129   \\
-            LUAD vs. Rest          & 95999                                     & 30220    \\
-            LUSC vs. Rest          & 427525                                    & 318345    \\
-            LCC vs. Rest           & 1361568                                   & 1068507    \\
-            SCLC vs. Rest          & 3022977                                   & 2173620 \\
-            \hline
-        \end{tabular}
+        \begin{threeparttable}
+            \begin{tabular}{|l|p{0.2\textwidth}|p{0.2\textwidth}|}
+                \hline
+                \multirow{2}{*}{Group} & \multicolumn{2}{c|}{Filtered DMCs\tnote{1}}           \\
+                \cline{2-3}            & Befor                                       & After   \\
+                \hline
+                CTL vs. Rest           & 584239                                      & 139129  \\
+                LUAD vs. Rest          & 95999                                       & 30220   \\
+                LUSC vs. Rest          & 427525                                      & 318345  \\
+                LCC vs. Rest           & 1361568                                     & 1068507 \\
+                SCLC vs. Rest          & 3022977                                     & 2173620 \\
+                \hline
+            \end{tabular}
+
+            \begin{tablenotes}
+                \item[1] Exclude the following DMCs:
+                1. Those that appear in more than one group.
+                2. Those located on the sex chromosomes
+            \end{tablenotes}
+
+        \end{threeparttable}
     \end{center}
     \label{tab:table_dmc_ount}
 \end{table}
 
 \subsection{\textit{p}-th percentile algorithm}
 
-A more stringent strategy was then used for further screening of DMCs. We evaluate the 
+A more stringent strategy was then used for further screening of DMCs. We evaluate the
 \textit{p}-th percentile of low-methylated group and the (\textit{100 - p})-th percentile
 of high-methylated group. In hypermethylated DMCs, the \textit{p}-th percentile of the target
 group and the (\textit{100 - p})-th percentile of the background are calculated; conversely,
@@ -116,8 +128,10 @@ group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{
     \label{fig:dmcPC}
 \end{figure}
 
-Utilizing \emph{mcomppost}, we conducted an analysis of the DMCs within each group. As the \textit{p}-th percentile increased, the number of retained DMCs 
-decreased significantly (Figure \ref*{fig:dmcPK}). By selecting an appropriate percentile (\textit{p}) threshold, we can identify DMCs that more stringently adhere to 
+Utilizing \emph{mcomppost}, we conducted an analysis of the DMCs within each group. As
+the \textit{p}-th percentile increased, the number of retained DMCs decreased significantly
+(Figure \ref*{fig:dmcPK}). By selecting an appropriate percentile (\textit{p}) threshold,
+we can identify DMCs that more stringently adhere to
 group specificity.
 
 
@@ -128,11 +142,86 @@ group specificity.
     \label{fig:dmcPK}
 \end{figure}
 
+\section{Deconvolution}\label{sec:deconvolution}
+Three deconvolution algorithms have been implemented in the \textit{pattools deconv} tool.\
+In this study, we utilized Pattools Deconv to perform the deconvolution of the tissue samples.
+
+\begin{itemize}
+    \item Sun \cite{sun_plasma_2015}
+    \item Moss \cite{moss_comprehensive_2018}
+    \item Loyfer \cite{Loyfer2024.05.08.593132}
+\end{itemize}
+
+To mitigate the interference caused by the presence of numerous cell/tissue types in
+lung tissue deconvolution, we manually selected specific cell/tissue types that are potentially
+implicated in lung cancer for this analysis (Table \ref*{tab:deconvolution}). For clarification
+on the cell/tissue types, \textit{pattools deconv-helper} can be used to view the corresponding
+cell/tissue types for each category.
+
+\begin{table}[htbp]
+    \begin{center}
+        \caption{Cell/Tissue types used by each algorithm }
+        \begin{tabular}{|>{\raggedright}m{2cm}|>{\raggedright}m{4cm}|>{\raggedright}m{4cm}|c|}
+            \hline
+            \textbf{Method}                         & \textbf{Refined group}                      & \textbf{Group}           & \textbf{Note} \\
+            \hline
+            \multirow{6}{*}{Sun \textit{et al.}}    & Lung cells                                  & Lungs                    &               \\
+            \cline{2-4}                             & Neural and endocrine cells                  & Brain                    &               \\
+            \cline{2-4}                             & \multirow{3}{*}{Immune cells}               & T-cells                  &               \\
+            \cline{3-4}                             &                                             & B-cells                  &               \\
+            \cline{3-4}                             &                                             & Neutrophils              &               \\
+            \cline{2-4}                             & Others                                      & Heart                    &               \\
+            \hline
+            \multirow{6}{*}{Moss \textit{et al.}}   & Lung cells                                  & LungCells                &               \\
+            \cline{2-4}                             & \multirow{2}{*}{Neural and endocrine cells} & CorticalNeurons          &               \\
+            \cline{3-4}                             &                                             & PancreaticBetaCells      &               \\
+            \cline{2-4}                             & \multirow{6}{*}{Immune cells}               & Cd4tCells                &               \\
+            \cline{3-4}                             &                                             & Cd8tCells                &               \\
+            \cline{3-4}                             &                                             & BCells                   &               \\
+            \cline{3-4}                             &                                             & NkCells                  &               \\
+            \cline{3-4}                             &                                             & Monocytes                &               \\
+            \cline{3-4}                             &                                             & Neutrophils              &               \\
+            \cline{2-4}                             & \multirow{2}{*}{Others}                     & VascularEndothelialCells &               \\
+            \cline{3-4}                             &                                             & LeftAtrium               &               \\
+            \hline
+            \multirow{6}{*}{Loyfer \textit{et al.}} & \multirow{2}{*}{Lung cells}                 & Lung-Ep-Alveo            &               \\
+            \cline{3-4}                             &                                             & Lung-Ep-Bron             &               \\
+            \cline{2-4}                             & \multirow{5}{*}{Neural and endocrine cells} & Neuron                   &               \\
+            \cline{3-4}                             &                                             & Oligodend                &               \\
+            \cline{3-4}                             &                                             & Pancreas-Alpha           &               \\
+            \cline{3-4}                             &                                             & Pancreas-Beta            &               \\
+            \cline{3-4}                             &                                             & Pancreas-Delta           &               \\
+            \cline{2-4}                             & \multirow{5}{*}{Immune cells}               & Blood-T                  &               \\
+            \cline{3-4}                             &                                             & Blood-B                  &               \\
+            \cline{3-4}                             &                                             & Blood-NK                 &               \\
+            \cline{3-4}                             &                                             & Blood-Mono+Macro         &               \\
+            \cline{3-4}                             &                                             & Blood-Granul             &               \\
+            \cline{2-4}                             & \multirow{2}{*}{Others}                     & Endothel                 &               \\
+            \cline{3-4}                             &                                             & Heart-Fibro              &               \\
+            \cline{3-4}                             &                                             & Head-Neck-Ep             &               \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \label{tab:deconvolution}
+\end{table}
+
+This code performs the deconvolution of a sample using algorithm developed by Sun \textit{et al.} with \textit{pattools deconv}.
+
+\begin{lstlisting}[language=sh, caption={}]
+pattools deconv -m sun -g hg38 \
+        -c /path/to/references/hg38/CpG.bed.gz \
+        -p sample.pat.gz -o sample.sun.tsv \
+        --include Lungs Heart Brain T-cells B-cells Neutrophils
+\end{lstlisting}
+
 \section{Code availability}\label{sec:code}
 
-The analysis code of this artile a available in Github repository \href{https://github.com/hcyvan/epiLungCancer}{epiLungCancer}. The
-sub project of epiLungCancer, \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}},  was developed to process
-BS-seq methylation data.
+The analysis code of this artile a available in Github repository
+\href{https://github.com/hcyvan/epiLungCancer}{epiLungCancer}. The sub project of epiLungCancer,
+\href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}},  was developed
+to process BS-seq methylation data. Additionally, some of the analyses in this paper utilize code
+from \href{https://github.com/hcyvan/pattools}{pattools}, which will be discussed in detail in
+separate publications.
 
 
 
