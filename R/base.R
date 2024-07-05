@@ -143,6 +143,11 @@ Sample <- setRefClass(
       }
       bed[,c(1:3,match(samples, colnames(bed)))]
     },
+    selectFromMatrixByGroup=function(data,group){
+      df<-filter(table, Group==group)
+      coli<-match(df$SampleName, colnames(data))
+      data[,coli]
+    },
     show = function() {
       print(table(table$Group))
     }

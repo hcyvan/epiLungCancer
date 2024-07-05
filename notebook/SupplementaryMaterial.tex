@@ -22,8 +22,8 @@
 The analysis algorithms and methodologies employed in this paper were integrated into two tool sets:
 
 \begin{itemize}
-    \item  \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}}:
-    \item \href{https://github.com/hcyvan/pattools}{\textit{pattools}}:
+    \item  \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}}
+    \item \href{https://github.com/hcyvan/pattools}{\textit{pattools}}
 \end{itemize}
 
 \subsection{methytools}\label{sec:software-develope-methytools}
@@ -143,14 +143,8 @@ group specificity.
 \end{figure}
 
 \section{Deconvolution}\label{sec:deconvolution}
-Three deconvolution algorithms have been implemented in the \textit{pattools deconv} tool.\
-In this study, we utilized Pattools Deconv to perform the deconvolution of the tissue samples.
-
-\begin{itemize}
-    \item Sun \cite{sun_plasma_2015}
-    \item Moss \cite{moss_comprehensive_2018}
-    \item Loyfer \cite{Loyfer2024.05.08.593132}
-\end{itemize}
+Three deconvolution algorithms (lofer\cite{Loyfer2024.05.08.593132}, moss \cite{moss_comprehensive_2018} 
+and sun\cite{sun_plasma_2015}) have been utilized to perform the deconvolution of the tissue samples.
 
 To mitigate the interference caused by the presence of numerous cell/tissue types in
 lung tissue deconvolution, we manually selected specific cell/tissue types that are potentially
@@ -205,6 +199,12 @@ cell/tissue types for each category.
     \label{tab:deconvolution}
 \end{table}
 
+For BS-seq data, wgbstools\cite{Loyfer2024.05.08.593132} were initially employed to convert the 
+aligned BAM format data into PAT format. Subsequently, the methylation metrics required by the corresponding 
+algorithm were extracted from the PAT format for deconvolution analysis. The algorithm utilized in this 
+study for deconvolution was NNLS. All three deconvolution algorithms discussed in this article were 
+implemented using \textit{pattools deconv}.
+
 This code performs the deconvolution of a sample using algorithm developed by Sun \textit{et al.} with \textit{pattools deconv}.
 
 \begin{lstlisting}[language=sh, caption={}]
@@ -214,6 +214,11 @@ pattools deconv -m sun -g hg38 \
         --include Lungs Heart Brain T-cells B-cells Neutrophils
 \end{lstlisting}
 
+\section{Abbreviations}\label{sec:abbr}
+\begin{itemize}
+    \item  \textbf{BS-seq}: Bisulfite sequencing
+    \item  \textbf{NNLS}: non-negative least squares linear regression
+\end{itemize}
 \section{Code availability}\label{sec:code}
 
 The analysis code of this artile a available in Github repository
