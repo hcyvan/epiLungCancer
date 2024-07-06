@@ -1,5 +1,5 @@
 % Preamble
-\documentclass[10pt]{article}
+\documentclass[12pt,letterpaper]{article}
 \title{Supplementary Material}
 \author{Yihang Cheng}
 \date{\today}
@@ -9,9 +9,12 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
-\usepackage{listings}
+% \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{threeparttable}
+\usepackage{float}
+% \usepackage[style=authoryear,backend=bibtex]{biblatex}
+% \addbibresource{SupplymentaryMaterialReference.bib}
 % Document
 \begin{document}
 \maketitle
@@ -34,12 +37,12 @@ methytools is a toolkit developed for processing BS-seq methylation data.
 
 \emph{mcomppost percentile} can be used to calculate the percentile of each CpGs and add percentile columns to the DMCs files.
 
-\begin{lstlisting}[language=sh, caption={}]
+\begin{verbatim}
 mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
-                     -m ./merge.d3.all.bed.gz \
-                     -t ./sample.CTL.txt \
+                    -m ./merge.d3.all.bed.gz \
+                    -t ./sample.CTL.txt \
                      -o ./dmc.Rest.vs.CTL.percentile.txt
-\end{lstlisting}
+\end{verbatim}
 
 \subsection{pattools}\label{sec:software-develope-pattools}
 
@@ -56,9 +59,9 @@ in this study. The software will be introduced in a forthcoming paper.
 
 We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various
 subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening. The target group and Background
-group are shown in the following table\ref*{tab:grouping}.
+group are shown in the following table \ref*{tab:grouping}.
 
-\begin{table}[htbp]
+\begin{table}[!h]
     \begin{center}
         \caption{ Grouping of One-vs-Rest }
         \begin{tabular}{|l|l|}
@@ -74,7 +77,6 @@ group are shown in the following table\ref*{tab:grouping}.
         \end{tabular}
     \end{center}
     \label{tab:grouping}
-
 \end{table}
 
 \subsection{MOABS mcomp}
@@ -83,7 +85,7 @@ Using the default parameters of MOABS, we obtained a large number of DMCs in eac
 Subsequently, duplicated differentially methylated CpG sites (DMCs) across multiple groups were excluded, leaving
 only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
 
-\begin{table}[htbp]
+\begin{table}[!h]
     \begin{center}
         \caption{The count of DMCs find by MOABS}
         \begin{threeparttable}
@@ -121,7 +123,7 @@ in hypomethylated DMCs, this relationship is reversed. If the \textit{p}-th perc
 low-methylated group is less than or equal to (\textit{100-p})-th percentile of the high-methylated
 group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
 
-\begin{figure}[htbp]
+\begin{figure}{ht}
     \centering
     \includegraphics[width=0.8\linewidth]{./img/dmcPercentileCut.png}
     \caption{The 85-th percentile of target and background samples in a hypomethylated DMCs}
@@ -143,7 +145,7 @@ group specificity.
 \end{figure}
 
 \section{Deconvolution}\label{sec:deconvolution}
-Three deconvolution algorithms (lofer\cite{Loyfer2024.05.08.593132}, moss \cite{moss_comprehensive_2018} 
+Three deconvolution algorithms (lofer\cite{Loyfer2024.05.08.593132}, moss \cite{moss_comprehensive_2018}
 and sun\cite{sun_plasma_2015}) have been utilized to perform the deconvolution of the tissue samples.
 
 To mitigate the interference caused by the presence of numerous cell/tissue types in
@@ -155,7 +157,7 @@ cell/tissue types for each category.
 \begin{table}[htbp]
     \begin{center}
         \caption{Cell/Tissue types used by each algorithm }
-        \begin{tabular}{|>{\raggedright}m{2cm}|>{\raggedright}m{4cm}|>{\raggedright}m{4cm}|c|}
+        \begin{tabular}{|l|l|l|l|}
             \hline
             \textbf{Method}                         & \textbf{Refined group}                      & \textbf{Group}           & \textbf{Note} \\
             \hline
@@ -199,20 +201,50 @@ cell/tissue types for each category.
     \label{tab:deconvolution}
 \end{table}
 
-For BS-seq data, wgbstools\cite{Loyfer2024.05.08.593132} were initially employed to convert the 
-aligned BAM format data into PAT format. Subsequently, the methylation metrics required by the corresponding 
-algorithm were extracted from the PAT format for deconvolution analysis. The algorithm utilized in this 
-study for deconvolution was NNLS. All three deconvolution algorithms discussed in this article were 
+For BS-seq data, wgbstools\cite{Loyfer2024.05.08.593132} were initially employed to convert the
+aligned BAM format data into PAT format. Subsequently, the methylation metrics required by the corresponding
+algorithm were extracted from the PAT format for deconvolution analysis. The algorithm utilized in this
+study for deconvolution was NNLS. All three deconvolution algorithms discussed in this article were
 implemented using \textit{pattools deconv}.
 
 This code performs the deconvolution of a sample using algorithm developed by Sun \textit{et al.} with \textit{pattools deconv}.
 
-\begin{lstlisting}[language=sh, caption={}]
+\begin{verbatim}
 pattools deconv -m sun -g hg38 \
-        -c /path/to/references/hg38/CpG.bed.gz \
-        -p sample.pat.gz -o sample.sun.tsv \
-        --include Lungs Heart Brain T-cells B-cells Neutrophils
-\end{lstlisting}
+                -c /path/to/references/hg38/CpG.bed.gz \
+                -p sample.pat.gz -o sample.sun.tsv \
+                --include Lungs Heart Brain T-cells B-cells Neutrophils
+\end{verbatim}
+
+\section{Genes associated with lung cancer subtypes}\label{sec:genes}
+
+\subsection{Genes summary}\label{sec:genes-summary}
+
+There is no simple one-to-one relationship between lung cancer subtypes and cells of origin. Subtypes are
+influenced by both the originating cells and the driver mutations\cite{ferone_cells_2020}.
+
+\begin{table}[htbp]
+    \begin{center}
+        \caption{ Marker genes of interest}
+        \begin{tabular}{|l|l|l|}
+            \hline
+            \textbf{Subtype}      & \textbf{Gene} & \textbf{Note}                              \\
+            \hline
+            LUAD                  & NKX2-1        & upregulated in LUAD                        \\
+            \hline
+            \multirow{2}{*}{LUSC} & SOX2          & upregulated in LUSC                        \\
+            \cline{2-3}           & P63           & basal cell marker                          \\
+            \hline
+            \multirow{4}{*}{SCLC} & ASCL1         & \multirow{4}{*}{ref\cite{baine_sclc_2020}} \\
+            \cline{2-2}           & NEUROD1       &                                            \\
+            \cline{2-2}           & POU2F3        &                                            \\
+            \cline{2-2}           & YAP1          &                                            \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \label{tab:gene-marker}
+\end{table}
+\subsection{Extraction of methylation levels in gene regulatory regions}\label{sec:gene-methylation}
 
 \section{Abbreviations}\label{sec:abbr}
 \begin{itemize}
@@ -229,7 +261,7 @@ from \href{https://github.com/hcyvan/pattools}{pattools}, which will be discusse
 separate publications.
 
 
-
-\bibliographystyle{plain}
+% \printbibliography
+\bibliographystyle{abbrv}
 \bibliography{SupplymentaryMaterialReference}
 \end{document}
