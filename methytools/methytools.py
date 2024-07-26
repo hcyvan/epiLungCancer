@@ -129,7 +129,7 @@ def analysis_genomic_element_from_gz(ratio_txt, element, out_matrix, up=50, down
 def extract_methylation_from_methylation_matrix(matrix_bed, region_bed, output_file):
     matrix_bed = Path(matrix_bed)
     matrix_bed_csi = matrix_bed.with_suffix('.gz.csi')
-    tabix_file = pysam.TabixFile(str(matrix_bed), index=matrix_bed_csi)
+    tabix_file = pysam.TabixFile(str(matrix_bed), index=matrix_bed_csi.__str__())
     if output_file:
         fo = open(output_file, 'w')
     else:

@@ -246,11 +246,37 @@ influenced by both the originating cells and the driver mutations\cite{ferone_ce
 \end{table}
 \subsection{Extraction of methylation levels in gene regulatory regions}\label{sec:gene-methylation}
 
+\section{Methylation vector}\label{sec:vector}
+
+We represent methylated CpGs as 1 and unmethylated CpGs as 0, utilizing a 
+0/1 array to indicate the methylation status of consecutive CpGs within the 
+genome. This vector, composed of n binary values, is referred to as a 
+methylation vector (MV).
+
+\subsection{Subtype-specific methylation vectors}\label{sec:ssmv}
+
+Identification of subtype-specific MVs involves the following three steps:
+
+\begin{itemize}
+    \item  Vectorization
+    \item  Clustering
+    \item  Seperating
+\end{itemize}
+
+\subsubsection{Vectorization}
+
+\subsubsection{Clustering}
+
+\subsubsection{Seperating}
+
 \section{Abbreviations}\label{sec:abbr}
+
 \begin{itemize}
     \item  \textbf{BS-seq}: Bisulfite sequencing
     \item  \textbf{NNLS}: non-negative least squares linear regression
+    \item  \textbf{MVs}: Methylation vectors
 \end{itemize}
+
 \section{Code availability}\label{sec:code}
 
 The analysis code of this artile a available in Github repository

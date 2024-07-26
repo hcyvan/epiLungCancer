@@ -28,7 +28,7 @@ getExt <- function(file_path) {
   }
 }
 
-loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE){
+loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE, no.cache=FALSE){
   if (is.null(ext)) {
     ext<-getExt(name)
   }
@@ -42,15 +42,21 @@ loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE){
   }else if(file.exists(ext.path)) {
     if(ext=='csv'){
       data<-read.csv(ext.path)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     }else if(ext=='tsv'){
       data<-read.csv(ext.path,sep = '\t',check.names = FALSE)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     }else if(ext=='bed'){
       data<-read.csv(ext.path,sep = '\t',check.names = FALSE, header=header)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     } else {
       stop(sprintf("The file format <%s> is not supported", ext)); 
@@ -67,11 +73,11 @@ saveImage <- function(file,...){
   }
 }
 
-saveBed<-function(bed,outfile){
+saveBed<-function(bed,outfile,...){
   if (!startsWith(colnames(bed)[1], '#')){
     colnames(bed)[1]<-paste0('#',colnames(bed)[1])
   }
-  write.table(bed,outfile,sep = '\t',quote = FALSE,row.names = FALSE)
+  write.table(bed,outfile,sep = '\t',quote = FALSE,row.names = FALSE,...)
 }
 
 removeNegativeOne <- function(m){
