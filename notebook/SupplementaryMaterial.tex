@@ -13,6 +13,8 @@
 \usepackage{xcolor}
 \usepackage{threeparttable}
 \usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 % \usepackage[style=authoryear,backend=bibtex]{biblatex}
 % \addbibresource{SupplymentaryMaterialReference.bib}
 % Document
@@ -249,11 +251,11 @@ influenced by both the originating cells and the driver mutations\cite{ferone_ce
 \section{Methylation vector}\label{sec:vector}
 
 We represent methylated CpGs as 1 and unmethylated CpGs as 0, utilizing a 
-0/1 array to indicate the methylation status of consecutive CpGs within the 
+0-1 array to indicate the methylation status of consecutive CpGs within the 
 genome. This vector, composed of n binary values, is referred to as a 
 methylation vector (MV).
 
-\subsection{Subtype-specific methylation vectors}\label{sec:ssmv}
+\subsection{Methylation vector analysis algorithm}\label{sec:ssmv}
 
 Identification of subtype-specific MVs involves the following three steps:
 
@@ -265,9 +267,98 @@ Identification of subtype-specific MVs involves the following three steps:
 
 \subsubsection{Vectorization}
 
+This step was implemented using the \textit{pattools mv-vectorization} command. For each sample, 
+a sliding window of length w CpGs is applied with a step size of 1 CpG site, resulting in a series 
+of overlapping windows where adjacent windows share w-1 CpGs. Within each window, methylated CpGs 
+are represented as 1 and unmethylated CpGs as 0, forming a 0-1 vector. Vectors with dimensions less 
+than w are discarded.
+
 \subsubsection{Clustering}
 
+This step was implemented using the \textit{pattools mv-clustering} command. Merge MVs from all 
+samples of CTL, LUAD, LUSC, LCC, and SCLC, and label each MV according to its sample and sample 
+group of origin within each window. Apply the multiple repeats and equal spacing clustering (MRESC) 
+algorithm to cluster the MVs in each window. 
+
+Alternatively, existing clustering algorithms such as 
+DBSCAN\cite{dbscanschubert}, HDBSCAN\cite{mcinnes2017hdbscan}, or KMeans\cite{kmeanskrishna} 
+may be used in place of MRESC for this step.
+
 \subsubsection{Seperating}
+
+This step was implemented using the \textit{pattools mv-separating} command.
+
+\subsection{MRESC}
+
+In comparison to conventional clustering methods, the clustering of MVs exhibits 2 distinct 
+characteristics:
+
+\begin{itemize}
+    \item  A limited number of MVs types exist within a fixed window, with a significant number 
+    of these vectors recurring frequently. These identical MVs represent the same methylation 
+    motif. In a window containing $w$ CpGs, there are $w^2$ possible methylation motifs. Each 
+    motif may be observed multiple times. 
+    \item  Methylation motifs are distributed equidistantly, forming a grid-like pattern. For 
+    example, the manhattan distance between the MVs (0,0,0,0) and (1,0,0,0) is 1, and similarly,
+    the distance between (0,0,0,0) and (0,1,0,0) is also 1.
+\end{itemize}
+
+\subsubsection{The distance between MVs}
+
+In the representation of MVs, methylated CpGs are denoted by 1, while unmethylated CpGs are denoted 
+by 0. In the representation of methylation motifs, 'C' represents methylated CpGs, and 'T' 
+represents unmethylated CpGs. The distances between two distinct motifs are calculated and then 
+sorted from smallest to largest. The distance between a given motif and itself is marked as 0. The 
+distance between two adjacent moitfs is marked as 1. The distance between two moitfs separated by 
+one interval is marked as 2, and so forth. In a window containing $w$ CpGs (Figure \ref*{fig:MRESC}), 
+each methylation motif is adjacent to $w$ neighboring motifs, with a manhattan distance of 1.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.8\linewidth]{./img/mrescDist.png}
+    \caption{
+        All possible methylation motifs within a window containing 4 CpGs and the 
+        distances between them. As the number in the heatmap increases, the distance 
+        between the motifs becomes greater
+    }
+    \label{fig:MRESC}
+\end{figure}
+
+\subsubsection{Pseudocode}
+
+Here is the pseudo code of MRESC (Algorithm \ref{alg:MRESC}). There are several key 
+functions in this algorithm.
+
+\begin{itemize}
+    \item  \textbf{countVectorsInEachMotif:} Count the number of methylation vectors representing each 
+    distinct methylation motif.
+    \item  \textbf{findNeighborsIndex:} Find the neighboring motifs of a given motif
+    \item  \textbf{findNeighborMax:} Identify the maximum MVs counts among the neighboring motifs of a given motif
+    \item  \textbf{markCluster:} Assign a cluster label to each motif
+    \item  \textbf{assignClusterLabel2Vectors:} Assign a cluster label to each MV
+\end{itemize}
+
+\begin{algorithm}[ht]
+    \caption{\textbf{MRESC}}
+    \label{alg:MRESC}
+    \begin{algorithmic}
+        \STATE \textbf{Function doMRESC}(vectors, w)
+        \STATE \ \ \ \ counts $\gets$ \textbf{countVectorsInEachMotif}(vectors)
+        \STATE \ \ \ \ clusters $\gets$ \textbf{[0]} * w
+        \STATE \ \ \ \ \textbf{For} $i \gets 0$ \textbf{to} w - 1
+        \STATE \ \ \ \ \ \ \ \ \textbf{For} $j$ \textbf{in} \textbf{findNeighborsIndex}(i)
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \textbf{If} counts[i] $<$ counts[j] \textbf{then}
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textbf{Continue}
+        \STATE \ \ \ \ \ \ \ \ \textbf{EndIf}
+        \STATE \ \ \ \ \ \ \ \ max\_nb $\gets$ \textbf{findNeighborMax}(j, counts)
+        \STATE \ \ \ \ \ \ \ \ \textbf{If} counts[i] $\geq$ max\_nb \textbf{then}
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \textbf{markCluster}(i, j, clusters)
+        \STATE \ \ \ \ \ \ \ \ \textbf{EndIf}
+        \STATE \ \ \ \ \textbf{EndFor}
+        \STATE \ \ \ \ labels $\gets$ \textbf{assignClusterLabel2Vectors}(vectors, clusters)
+        \STATE \ \ \ \ \textbf{Return} labels
+        \end{algorithmic}
+\end{algorithm}
 
 \section{Abbreviations}\label{sec:abbr}
 
