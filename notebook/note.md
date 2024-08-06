@@ -21,6 +21,14 @@ methytools region-methy -i /mnt/d/data/epiLungCancer/raw/merge.d3.all.bed.gz -e 
 ```shell
 methytools extract -i /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.d3.all.bed.gz -o /mnt/d/data/epiLungCancer/intermediate/one2rest.dmc.beta.bed
 ```
+```shell
+methytools extract -i ../CTL.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.group.3x.all.bed.gz -o CTL.smv.beta.bed &
+methytools extract -i ../LUAD.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.group.3x.all.bed.gz -o LUAD.smv.beta.bed &
+methytools extract -i ../LUSC.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.group.3x.all.bed.gz -o LUSC.smv.beta.bed &
+methytools extract -i ../LCC.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.group.3x.all.bed.gz -o LCC.smv.beta.bed &
+methytools extract -i ../SCLC.bed -m /mnt/d/data/epiLungCancer/raw/moabs/merge.group.3x.all.bed.gz -o SCLC.smv.beta.bed &
+
+```
 
 # Further filtering of mcomp dmc results (mcomppost percentile)
 ```shell
@@ -39,6 +47,7 @@ mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/p85/one2rest85.d
 mcomppost dmc2dmr -i /mnt/d/data/epiLungCancer/intermediate/dmc/p90/one2rest90.dmc.bed -o /mnt/d/data/epiLungCancer/intermediate/dmc/p90/one2rest90.dmr.py.bed
 ```
 # Homer
+## subtype-specific dmr
 ```shell
 nohup findMotifsGenome.pl ../one2rest80.CTL.hypo.dmr.bed hg38 ./CTL.hypo -mask > nohup.CTL.hypo.log  2>&1 &
 nohup findMotifsGenome.pl ../one2rest80.LUAD.hypo.dmr.bed hg38 ./LUAD.hypo -mask > nohup.LUAD.hypo.log  2>&1 &
@@ -74,4 +83,27 @@ nohup findMotifsGenome.pl ../one2rest90.LUAD.hyper.dmr.bed hg38 ./LUAD.hyper -ma
 nohup findMotifsGenome.pl ../one2rest90.LUSC.hyper.dmr.bed hg38 ./LUSC.hyper -mask > nohup.LUSC.hyper.log  2>&1 &
 nohup findMotifsGenome.pl ../one2rest90.LCC.hyper.dmr.bed hg38 ./LCC.hyper -mask > nohup.LCC.hyper.log  2>&1 &
 nohup findMotifsGenome.pl ../one2rest90.SCLC.hyper.dmr.bed hg38 ./SCLC.hyper -mask > nohup.SCLC.hyper.log  2>&1 &
+```
+## specific methylation vectors window
+```shell
+nohup findMotifsGenome.pl ../CTL.bed hg38 ./CTL -mask > nohup.CTL.log  2>&1 &
+nohup findMotifsGenome.pl ../LUAD.bed hg38 ./LUAD -mask > nohup.LUAD.log  2>&1 &
+nohup findMotifsGenome.pl ../LUSC.bed hg38 ./LUSC -mask > nohup.LUSC.log  2>&1 &
+nohup findMotifsGenome.pl ../LCC.bed hg38 ./LCC -mask > nohup.LCC.log  2>&1 &
+nohup findMotifsGenome.pl ../SCLC.bed hg38 ./SCLC -mask > nohup.SCLC.log  2>&1 &
+
+```
+
+```shell
+nohup findMotifsGenome.pl ../CTL.onco.bed hg38 ./CTL -mask > nohup.CTL.log  2>&1 &
+nohup findMotifsGenome.pl ../LUAD.onco.bed hg38 ./LUAD -mask > nohup.LUAD.log  2>&1 &
+nohup findMotifsGenome.pl ../LUSC.onco.bed hg38 ./LUSC -mask > nohup.LUSC.log  2>&1 &
+nohup findMotifsGenome.pl ../LCC.onco.bed hg38 ./LCC -mask > nohup.LCC.log  2>&1 &
+nohup findMotifsGenome.pl ../SCLC.onco.bed hg38 ./SCLC -mask > nohup.SCLC.log  2>&1 &
+
+```
+# pattools
+```shell
+pattools vector-diff -i /mnt/d/data/epiLungCancer/intermediate/vector/20240612/merge.motif.gz -g 4 > SCLC.txt
+pattools region-file -t cpg2genome --column col2 --offset-col2-start-and-end 3 --out-format bed -c /mnt/d/project/wgbs_tools/references/hg38/CpG.bed.gz -i SCLC.txt -o SCLC.bed
 ```
