@@ -47,6 +47,13 @@ interDmrVector2<-function(dmr, vector){
   )
 }
 
+readMV<-function(mvm.file){
+  lines <- readLines(mvm.file)
+  lines <- grep("^##", lines, invert = TRUE, value = TRUE)
+  data <- read.csv(text = paste(lines, collapse = "\n"),check.names = FALSE,sep = '\t')
+  return(data)
+}
+## class Motif ----------------------------------------------------------------
 Motif <- setRefClass(
   "Motif",
   fields = list(count = "numeric", motifs='character'),
@@ -55,15 +62,23 @@ Motif <- setRefClass(
       count<<-count
       motifs<<-get_motif_array()
     },
-    get_motif_array=function(){
+    get_motif_array=function(type='CT'){
+      if (type=='CT'){
+        M<-'C'
+        U<-'T'
+      }else{
+        M<-'1'
+        U<-'0'
+      }
+      
       ms <- c()
-      ms <- c(ms, paste(rep("C", count), collapse = ""))
+      ms <- c(ms, paste(rep(M, count), collapse = ""))
       for (i in 1:count) {
         combos <- combinations(count, i)
         for (e in 1:nrow(combos)) {
-          motif <- rep("C", count)
+          motif <- rep(M, count)
           indices <- combos[e, ] 
-          motif[indices] <- "T"
+          motif[indices] <- U
           ms <- c(ms, paste(motif, collapse = ""))
         }
       }
@@ -89,13 +104,7 @@ Motif <- setRefClass(
   )
 )
 
-readMV<-function(mvm.file){
-  lines <- readLines(mvm.file)
-  lines <- grep("^##", lines, invert = TRUE, value = TRUE)
-  data <- read.csv(text = paste(lines, collapse = "\n"),check.names = FALSE,sep = '\t')
-  return(data)
-}
-
+## class MVM ------------------------------------------------------------------
 MVM <- setRefClass(
   "MVM",
   fields = list(table = "data.frame"),
@@ -103,11 +112,16 @@ MVM <- setRefClass(
     initialize = function(mvm.file) {
       table<<-readMV(mvm.file) 
     },
-    getBySample=function(sample){
+    getBySample=function(sample, window=NULL){
       col<-table[sample]
       col<-unlist(col)
       names(col)<-table$cpg
-      return(mvs2matrix(col))
+      m<-mvs2matrix(col)
+      if (!is.null(window)){
+        motif<-Motif(4)
+        colnames(m)<-motif$get_motif_array('01')
+      }
+      return(m)
     },
     getByCpG=function(cpg.idx){
       row<-table[table$cpg==cpg.idx,-1:-2]
@@ -121,7 +135,7 @@ MVM <- setRefClass(
     }
   )
 )
-
+## class MVH ------------------------------------------------------------------
 MVH <- setRefClass(
   "MVH",
   fields = list(table = "data.frame"),
@@ -144,34 +158,90 @@ MVH <- setRefClass(
     }
   )
 )
-
-getHeatmapMotif<-function(count){
-  if (count==4){
-    ws<-1.9
-  }else{
-    ws<-3
+## plot function ---------------------------------------------------------------
+plotMotifAnno<-function(m=5, ori='v'){
+  motif<-Motif(m)
+  vcs<-motif$motif2vector()
+  sites<-lapply(1:length(vcs), function(y){
+    xi<-sapply(1:length(vcs[[y]]),function(x){
+      c(x, y,vcs[[y]][x])
+    })%>%t
+    xi
+  })
+  data<-data.frame(do.call(rbind,sites))
+  data$motif<-motif$motifs[data$V2]
+  data$motif<-factor(data$motif, levels = motif$motifs)
+  data$r<-0.45
+  data$C<-as.character(data$C)
+  color_map<-c('black','white')
+  names(color_map)<-c('1','0')
+  if (ori=='v'){
+    data<-data.frame(x0=data$V1,y0=data$V2, r=data$r, x=data$V1, y=data$motif, fill=data$C)
+  }else if(ori=='h') {
+    data<-data.frame(x0=data$V2,y0=data$V1, r=data$r, x=data$motif, y=data$V1, fill=data$C)
   }
-  motif<-Motif(count)
-  m = motif$motif2vector(format='mat')
-  Heatmap(m, rect_gp = gpar(type = "none"),
-          height = unit(2, "cm"),
-          show_heatmap_legend = FALSE,
-          cluster_rows = FALSE,
-          cluster_columns = FALSE,
-          show_row_names = FALSE,
-          show_column_names = FALSE,
-          cell_fun = function(j, i, x, y, w, h, fill) {
-            p = m[i, j]
-            if (p==1){
-              fill.color<-'black'
-            }else{
-              fill.color<-"white"
-            }
-            grid.circle(x,y, w*ws, gp = gpar(fill = fill.color, col = "black"))
-          })
+  ggplot(data, aes(x0 = x0, y0 = y0, r = r,x=x,y=y,fill=fill)) +
+    geom_circle(color = "black")+
+    scale_fill_manual(values = color_map) +
+    theme_void()+
+    # coord_fixed()+
+    theme(legend.position = "none")
 }
 
-getHeatmapMotifFrac<-function(data){
+plotMotifAnno2<-function(count, ori='h'){
+  motif<-Motif(count)
+  m = motif$motif2vector(format='mat')
+  if (ori=='v'){
+    m<-t(m)
+    m<-m[nrow(m):1,]
+    if (count==4){
+      ws<-0.5
+    }else{
+      ws<-3
+    }
+    Heatmap(m, rect_gp = gpar(type = "none"),
+            width = unit(2, "cm"),
+            show_heatmap_legend = FALSE,
+            cluster_rows = FALSE,
+            cluster_columns = FALSE,
+            show_row_names = FALSE,
+            show_column_names = FALSE,
+            cell_fun = function(j, i, x, y, w, h, fill) {
+              p = m[i, j]
+              if (p==1){
+                fill.color<-'black'
+              }else{
+                fill.color<-"white"
+              }
+              grid.circle(x,y, w*ws, gp = gpar(fill = fill.color, col = "black"))
+            })
+  }else{
+    if (count==4){
+      ws<-1.9
+    }else{
+      ws<-3
+    }
+    Heatmap(m, rect_gp = gpar(type = "none"),
+            height = unit(2, "cm"),
+            show_heatmap_legend = FALSE,
+            cluster_rows = FALSE,
+            cluster_columns = FALSE,
+            show_row_names = FALSE,
+            show_column_names = FALSE,
+            cell_fun = function(j, i, x, y, w, h, fill) {
+              p = m[i, j]
+              if (p==1){
+                fill.color<-'black'
+              }else{
+                fill.color<-"white"
+              }
+              grid.circle(x,y, w*ws, gp = gpar(fill = fill.color, col = "black"))
+            })
+  }
+}
+
+
+plotMotifFrac<-function(data){
   ma<-sapply(split(SAMPLE$table,SAMPLE$table$Group), function(x){
     colSums(data[match(x$SampleName,rownames(data)),])
   })%>%t
@@ -184,7 +254,7 @@ getHeatmapMotifFrac<-function(data){
   return(col_annotation)
 }
 
-getHeatmapInWindow<-function(data){
+plotWindowBase<-function(data){
   row_annotation <-HeatmapAnnotation(
     df=data.frame(Stage=SAMPLE$sample2group(rownames(data))),
     col = list(Stage =COLOR_MAP_GROUP),
@@ -207,7 +277,7 @@ getHeatmapInWindow<-function(data){
   return(h)
 }
 
-getHeatmapInWindow2<-function(data){
+plotWindowBase2<-function(data){
   m<-as.matrix(data)
   Heatmap(m,
           name='Count',
@@ -220,47 +290,18 @@ getHeatmapInWindow2<-function(data){
   )
 }
 
-plotMVwindow<-function(data,window=5){
-  h<-getHeatmapInWindow(data)
-  annoMotif<-getHeatmapMotif(window)
-  annoFrac<-getHeatmapMotifFrac(data)
+plotWindow<-function(data,window=5){
+  h<-plotWindowBase(data)
+  annoMotif<-plotMotifAnno2(window)
+  annoFrac<-plotMotifFrac(data)
   annoFrac%v%h%v%annoMotif
 }
-plotMVwindow2<-function(data,window=5){
-  h<-getHeatmapInWindow2(data)
-  annoMotif<-getHeatmapMotif(window)
+plotWindow2<-function(data,window=5){
+  h<-plotWindowBase2(data)
+  annoMotif<-plotMotifAnno2(window)
   h%v%annoMotif
 }
 
-getMVsAnno<-function(m=5, ori='v'){
-  motif<-Motif(m)
-  vcs<-motif$motif2vector()
-  sites<-lapply(1:length(vcs), function(y){
-    xi<-sapply(1:length(vcs[[y]]),function(x){
-      c(x, y,vcs[[y]][x])
-    })%>%t
-    xi
-  })
-  data<-data.frame(do.call(rbind,sites))
-  data$motif<-motif$motifs[data$V2]
-  data$motif<-factor(data$motif, levels = motif$motifs)
-  data$r<-0.45
-  data$C<-as.character(data$C)
-  color_map<-c('black','white')
-  names(color_map)<-c('1','0')
-  if (ori=='v'){
-    data<-data.frame(x0=data$V1,y0=data$V2, r=data$r, x=data$V1, y=data$motif, fill=data$C)
-  }else if(ori=='h') {
-    data<-data.frame(x0=data$V2,y0=data$V1, r=data$r, x=data$motif, y=data$V1, fill=data$C)
-  }
-  
-  ggplot(data, aes(x0 = x0, y0 = y0, r = r,x=x,y=y,fill=fill)) +
-    geom_circle(color = "black")+
-    scale_fill_manual(values = color_map) +
-    theme_void()+
-    # coord_fixed()+
-    theme(legend.position = "none")
-}
 
 mvcReshape<-function(mvc){
   x<-0
@@ -296,11 +337,29 @@ plotMvc<-function(mvc,window=4){
     )
 }
 plotMvcWithAnno<-function(mvc){
-  p0<-getMVsAnno(4)
+  p0<-plotMotifAnno(4)
   p1<-plotMvc(mvc,4)
   pp<-p0+p1+plot_layout(widths = c(1, 29))
   pp
 }
+
+plotMvcWithAnno2<-function(mvc,window=4){
+  mvc<-log(mvc+0.00001)
+  m<-t(mvc)
+  #m<-m[nrow(m):1,]
+  Heatmap(m,
+          show_heatmap_legend = FALSE,
+          col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+          show_column_dend =FALSE,
+          cluster_rows = FALSE,
+          cluster_columns = TRUE,
+          clustering_method_columns = 'ward.D2',
+          row_names_side = "left",
+          show_row_names = TRUE,
+          show_column_names = FALSE
+  )
+}
+
 
 # Window size Attempts ---------------------------------------------------------
 windowcount<-sapply(3:8, function(x){
@@ -358,7 +417,7 @@ qc.file<-file.path(CONFIG$DataInter,'vector/w6/lung.mvc.qc')
 qc<-read.csv(qc.file, sep = '\t', header = TRUE, check.names = FALSE)
 qc$agv
 win4<-as.numeric(strsplit(qc$agv, split='\\|')[[1]])
-pa<-getMVsAnno(6,'h')
+pa<-plotMotifAnno(6,'h')
 motif<-Motif(6)
 data<-data.frame(x=motif$get_motif_array(),y=win4)
 p<-ggplot(data=data, aes(x=x, y=y)) +
@@ -377,8 +436,6 @@ p<-ggplot(data=data, aes(x=x, y=y)) +
 saveImage("mv.average.MVs.w4.pdf",width = 4.6,height = 2.6)
 p/pa
 dev.off()
-
-
 # Figure S2 smvp=0.3 and ssp=0.9 -----------------------------------------------
 plotFrac<-function(group="LUAD", window='w4'){
   vfile<-file.path(CONFIG$DataInter,'vector',window,paste0(group,'_0.80_0.1.mvc'))
@@ -541,7 +598,7 @@ for (group in names(mvsp)){
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
 data<-mvm$getByCpG(307432)
 #saveImage("mv.window.pdf",width = 4.6,height = 6)
-plotMVwindow(data,4)
+plotWindow(data,4)
 #dev.off()
 
 
@@ -549,14 +606,15 @@ plotMVwindow(data,4)
 ### CpG ---------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
 data<-mvm$getByCpG(497192)
-plotMVwindow2(data)
+plotWindow2(data)
 
 ### Sample ---------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
 data<-mvm$getBySample('Lung-Alveolar-Epithelial-Z000000T1')
-plotMVwindow2(data)
+plotWindow2(data)
 
 # SMV in Genome ----------------------------------------------------------------
+## plot Mvc1 -----------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.group.mvm'))
 pp0<-plotMvcWithAnno(mvm$getBySample('CTL'))
 pp1<-plotMvcWithAnno(mvm$getBySample('LUAD'))
@@ -564,6 +622,14 @@ pp2<-plotMvcWithAnno(mvm$getBySample('LUSC'))
 pp3<-plotMvcWithAnno(mvm$getBySample('LCC'))
 pp4<-plotMvcWithAnno(mvm$getBySample('SCLC'))
 pp0/pp1/pp2/pp3/pp4
+## plot Mvc2 -----------------------------------------------------------------------
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUSC.group.mvm'))
+p0<-plotMvcWithAnno2(mvm$getBySample('CTL',4))
+p1<-plotMvcWithAnno2(mvm$getBySample('LUAD',4))
+p2<-plotMvcWithAnno2(mvm$getBySample('LUSC',4))
+p3<-plotMvcWithAnno2(mvm$getBySample('LCC',4))
+p4<-plotMvcWithAnno2(mvm$getBySample('SCLC',4))
+p0%v%p1%v%p2%v%p3%v%p4
 
 # All other human cell type ----------------------------------------------------
 
@@ -592,7 +658,7 @@ m<-m[rowSums(m!=0)!=0,]
 m<-log(m+0.0001)%>%t
 # m<-mvh$matrix()%>%t%>%log
 #saveImage("aaa.sclc.pdf",width = 49,height = 30)
-#getHeatmapInWindow2(m)
+#plotWindowBase2(m)
 #dev.off()
 
 Heatmap(m,
