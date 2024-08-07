@@ -84,7 +84,7 @@ bed2gr<-function(bed){
 #'
 #' @examples
 gr2bed<-function(gr){
-  data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr))
+  data.frame(chrom=seqnames(gr), start=start(gr)-1, end=end(gr), gr@elementMetadata)
 }
 
 #' Convert gr format to feture format

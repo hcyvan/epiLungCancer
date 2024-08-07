@@ -9,6 +9,7 @@ library(ggplot2)
 library(gridExtra)
 library(ggforce)
 library(patchwork)
+library(karyoploteR)
 
 # Function ---------------------------------------------------------------------
 interDmrVector<-function(dmr,vfile){
@@ -26,23 +27,6 @@ interDmrVector<-function(dmr,vfile){
       out<-c(length(gr1), length(gr2), length(a1), length(a2))
       names(out)<-c('DMR', 'Vector', 'InterDMR','InterVector')
       out
-    }
-  )
-}
-
-interDmrVector2<-function(dmr, vector){
-  suppressWarnings(
-    {
-  gr2<-bed2gr(vector)
-  gr1<-bed2gr(dmr)
-  overlaps<-findOverlaps(gr1,gr2)
-  a1<-gr1[queryHits(overlaps)]
-  a2<-gr2[subjectHits(overlaps)]
-  a1<-unique(a1)
-  a2<-unique(a2)
-  out<-c(length(gr1), length(gr2), length(a1), length(a2))
-  names(out)<-c('DMR', 'Vector', 'InterDMR','InterVector')
-  out
     }
   )
 }
@@ -103,7 +87,76 @@ Motif <- setRefClass(
     }
   )
 )
+## class SMVC ------------------------------------------------------------------
+SMVC <- setRefClass(
+  "SMVC",
+  fields = list(table = "data.frame",
+                hypo = "data.frame",
+                hyper = "data.frame",
+                table.ori = "data.frame",
+                filename='character'),
+  methods = list(
+    initialize = function(mvm.file) {
+      filename<<-mvm.file
+      table.ori<<-readSMVC(mvm.file)
+      if (!is.null(table.ori)){
+        table<<-dplyr::select(table.ori, 'chrom', 'start', 'end', 'cpg', 'mvs', 'c_num','smvp','ssp','i0','i1','i0v0','i1v0','labels')
+        table$class<<-ifelse(table$i0v0>table$i1v0, 'hypo','hyper')
+        hypo<<-filter(table, class=='hypo')
+        hyper<<-filter(table, class=='hyper')
+      }
+    },
+    readSMVC = function(vfile){
+      vector<-loadData(vfile,ext = 'bed')
+      if (ncol(vector)==0){
+        return(NULL) 
+      }
+      vector<-filter(vector, !V1%in%c('chrM','chrX','chrY'))
+      names(vector)<-c('chrom','cpg','start','end','mvs','c_num','c_center','c_group_mvs_num','c_group_samples_num','c_group_samples','smvp','ssp','i0','i1','i0v0','i1v0','labels')
+      vector[,c(1,3,4,2,5:ncol(vector))]
+    },
+    toBed = function(){
+      bed<-sub("\\.smvc$", ".bed", filename)
+      saveBed(table, bed,col.names=FALSE)
+    },
+    overlap = function(bed,class=NULL){
+      #' gr0: regions in MVC
+      #' gr0u: regions only in MVC
+      #' gr0i: regions in MVC and DMR
+      #' gr1: regions in DMR
+      #' gr1u: regions only in DMR
+      #' gr1i: regions in DMR and MVC
+      data<-table
+      if (!is.null(class)){
+        if(class=='hyper'){
+          data<-hyper
+        }else if (class=='hypo'){
+          data<-hypo
+        }
+      }
+      gr0<-bed2gr(data)
+      gr1<-bed2gr(bed)
+      ov<-grOverlap(gr0,gr1)
+      ov
+    },
+    saveOverlap=function(bed,class){
+      ov<-overlap(bed, class)
+      for (x in c("gr0","gr0u","gr0i","gr1","gr1u","gr1i")){
+        data<-ov[[x]]
+        data<-gr2bed(data)
+        out.suffix<-paste0('.',class,'.',x,'.bed')
+        out<-sub("\\.smvc$", out.suffix, filename)
+        saveBed(data, out,col.names=FALSE)
+      }
+    },
+    show = function() {
+      print(table)
+    }
+  )
+)
 
+
+#smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
 ## class MVM ------------------------------------------------------------------
 MVM <- setRefClass(
   "MVM",
@@ -263,8 +316,9 @@ plotWindowBase<-function(data){
     which = 'row'
   )
   m<-as.matrix(data)
+  m<-log10(m+0.00001)
   h<-Heatmap(m,
-             name='Count',
+             name='Log10(count)',
              col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
              left_annotation  = row_annotation,
              # top_annotation =col_annotation,
@@ -291,9 +345,9 @@ plotWindowBase2<-function(data){
 }
 
 plotWindow<-function(data,window=5){
-  h<-plotWindowBase(data)
   annoMotif<-plotMotifAnno2(window)
   annoFrac<-plotMotifFrac(data)
+  h<-plotWindowBase(data)
   annoFrac%v%h%v%annoMotif
 }
 plotWindow2<-function(data,window=5){
@@ -446,17 +500,8 @@ plotFrac<-function(group="LUAD", window='w4'){
     x=vector$V11,
     y=vector$V12
   )
-  # n0<-nrow(data)
-  # data<-distinct(data, x, y)
-  # n1<-nrow(data)
-  # print(paste(n0,'=>',n1))
   p_scatter <- ggplot(data, aes(x = x, y = y)) +
     geom_point(size=0.3,alpha = 0.6) +
-    #geom_point(size=0.3) +
-    # geom_density_2d_filled()+
-    # xlab("MVs Frac")+
-    # ylab("Sample Frac")+
-    #ggtitle(paste0(group," ", window," ", nrow(data)))+
     labs(x = NULL, y = NULL) +
     ggtitle(nrow(data))+
     theme_bw()+
@@ -514,89 +559,61 @@ ggsave(file.path(CONFIG$DataResult, 'mv.smvp.ssp.png'), plot = pp, width = 8, he
 
 # DMR vs SMV -------------------------------------------------------------------
 dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
-loadMVC<-function(window, group){
-  vfile<-file.path(CONFIG$DataInter,'vector',window,paste0(group,'_0.80_0.1.mvc'))
-  vector<-loadData(vfile,ext = 'bed')
-  vector<-filter(vector, !V1%in%c('chrM','chrX','chrY'))
-  names(vector)<-c('chrom','cpg','start','end','mvs','c_num','c_center','c_group_mvs_num','c_group_samples_num','c_group_samples','smvp','ssp','specific','labels')
-  select(vector,'chrom','start','end','cpg','mvs','c_num','c_center','c_group_mvs_num','c_group_samples_num','c_group_samples','smvp','ssp','specific','labels')
-  #select(vector,'chrom', 'start', 'end', 'cpg', 'mvs', 'c_num','smvp','ssp','specific','labels')
-}
 
+groups<-names(COLOR_MAP_GROUP)[-1]
+files<-sapply(groups, function(x){
+  file.path(CONFIG$DataInter,'vector',window,paste0(x,'_1.0_0.4.smvc'))
+})
 
+smvcs<-lapply(files, function(x){
+  SMVC(x)
+})
 
-window<-'w4'
-sample.frac<-0.4
-v0<-loadMVC(window,'CTL')
-v1<-loadMVC(window,'LUAD')
-v2<-loadMVC(window,'LUSC')
-v3<-loadMVC(window,'LCC')
-v4<-loadMVC(window,'SCLC')
+## smvc to bed ----------------------------------------------------------------
+._<-lapply(smvcs, function(smvc){
+  smvc$toBed()
+})
 
-mvsp<-list(
-  CTL=filter(v0, smvp>=1, ssp>=sample.frac),
-  LUAD=filter(v1, smvp>=1, ssp>=sample.frac),
-  LUSC=filter(v2, smvp>=1, ssp>=sample.frac),
-  LCC=filter(v3, smvp>=1, ssp>=sample.frac),
-  SCLC=filter(v4, smvp>=1, ssp>=sample.frac)
+## Intersect ----------------------------------------------------------------
+do.call(rbind,lapply(groups, function(x){
+  dmr<-dmrList[[x]]
+  smvc<-smvcs[[x]]
+  ov1<-smvc$overlap(dmr$hypo,class='hypo')
+  ov2<-smvc$overlap(dmr$hyper,class='hyper')
+  data<-rbind(c(ov1$gr0stat, ov1$gr1stat),c(ov2$gr0stat, ov2$gr1stat))
+  colnames(data)<-c('mvc', 'mvcUniq', 'mvcInter','dmr','dmrUniq','dmrInter')
+  data<-data.frame(group=x,data,class=c('hypo','hyper'))
+  data
+}))
+## Save MVC and DMR -------------------------------------------------------------
+._<-lapply(groups, function(x){
+  dmr<-dmrList[[x]]
+  smvc<-smvcs[[x]]
+  smvc$saveOverlap(dmr$hypo, 'hypo')
+  smvc$saveOverlap(dmr$hyper, 'hyper')
+})
+# TEST -------------------------------------------------------------------------
+bfile<-file.path(CONFIG$DataInter,'vector/w4/beta/LUAD.smvc.beta.bed')
+
+beta<-read.csv(bfile,sep='\t')
+
+m<-beta[,-1:-3]
+Heatmap(m,
+        # show_heatmap_legend = FALSE,
+        # col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+        # show_column_dend =FALSE,
+        cluster_rows = TRUE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = TRUE
 )
 
-interList<-list(
-  # hypoCTL=interDmrVector2(dmrList$CTL$hypo,mvsp$CTL),
-  # hyperCTL=interDmrVector2(dmrList$CTL$hyper,mvsp$CTL),
-  hypoLUAD=interDmrVector2(dmrList$LUAD$hypo,mvsp$LUAD),
-  hyperLUAD=interDmrVector2(dmrList$LUAD$hyper,mvsp$LUAD),
-  hypoLUSC=interDmrVector2(dmrList$LUSC$hypo,mvsp$LUSC),
-  hyperLUSC=interDmrVector2(dmrList$LUSC$hyper,mvsp$LUSC),
-  hypoLCC=interDmrVector2(dmrList$LCC$hypo,mvsp$LCC),
-  hyperLCC=interDmrVector2(dmrList$LCC$hyper,mvsp$LCC),
-  hypoSCLC=interDmrVector2(dmrList$SCLC$hypo,mvsp$SCLC),
-  hyperSCLC=interDmrVector2(dmrList$SCLC$hyper,mvsp$SCLC)
-)
-do.call(rbind,interList)
-
-
-
-
-getOnco<-function(vector,dmr){
-  hypo<-dmr$hypo
-  hyper<-dmr$hyper
-  gr0<-bed2gr(vector)
-  gr1<-bed2gr(hypo)
-  gr2<-bed2gr(hyper)
-  c1<-gr0%>%length()
-  c2<-setdiff(gr0,gr1)%>%length()
-  c3<-setdiff(setdiff(gr0,gr1), gr2)%>%length()
-  uni<-setdiff(setdiff(gr0,gr1), gr2)
-  gr2bed(uni)
-}
-
-
-ocmv<-list(
-  CTL=getOnco(mvsp$CTL, dmrList$CTL),
-  LUAD=getOnco(mvsp$LUAD, dmrList$LUAD),
-  LUSC=getOnco(mvsp$LUSC, dmrList$LUSC),
-  LCC=getOnco(mvsp$LCC, dmrList$LCC),
-  SCLC=getOnco(mvsp$SCLC, dmrList$SCLC)
-)
-
-for (group in names(mvsp)){
-  vector<-mvsp[[group]]
-  vector$V2<-as.character(vector$V2)
-  vector$V3<-as.character(vector$V3)
-  vector$V4<-as.character(vector$V4)
-  mvc<-vector[,c(1,4,2,3,5:ncol(vector))]
-  saveBed(mvc, file.path(CONFIG$DataInter,'vector',window,paste0(group,'.smvc')),col.names=FALSE)
-  bed<-vector[,c(1,2,3,4,5)]
-  saveBed(bed, file.path(CONFIG$DataInter,'vector',window,paste0(group,'.bed')),col.names=FALSE)
-  saveBed(ocmv[[group]], file.path(CONFIG$DataInter,'vector',window,paste0(group,'.onco.bed')),col.names=FALSE)
-}
 
 # Heatmap of SMV  --------------------------------------------------------------
 ## Lung cancer -----------------------------------------------------------------
 ### CpG ------------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
-data<-mvm$getByCpG(307432)
+data<-mvm$getByCpG(10958214) # methy level不明显
 #saveImage("mv.window.pdf",width = 4.6,height = 6)
 plotWindow(data,4)
 #dev.off()

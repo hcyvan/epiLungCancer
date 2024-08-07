@@ -105,6 +105,50 @@ printConfidenceInterval<-function(data, conf.level=0.95){
   conf<-attributes(conf.int)$conf.level*100
   sprintf("%.4f (%d%% CI: %.4f - %.4f)", v, conf,conf.int[1],conf.int[2])
 }
+
+#' Calculate the intersection and difference of two GRanges
+#'
+#' @param gr0
+#' @param gr1
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+grOverlap<-function(gr0,gr1){
+  overlaps<-findOverlaps(gr0,gr1)
+  i0<-unique(queryHits(overlaps))
+  i1<-unique(subjectHits(overlaps))
+  gr0i<-gr0[i0]
+  gr0u<-gr0[-i0]
+  gr1i<-gr1[i1]
+  gr1u<-gr1[-i1]
+  gr0stat<-unlist(
+    list(
+      gr0=length(gr0),
+      gr0u=length(gr0u),
+      gr0i=length(gr0i)
+    )
+  )
+  gr1stat<-unlist(
+    list(
+      gr1=length(gr1),
+      gr1u=length(gr1u),
+      gr1i=length(gr1i)
+    )
+  )
+  list(
+    gr0stat=gr0stat,
+    gr1stat=gr1stat,
+    gr0=gr0,
+    gr0u=gr0u,
+    gr0i=gr0i,
+    gr1=gr1,
+    gr1u=gr1u,
+    gr1i=gr1i
+  )
+}
 ################################################################################
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
 COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
