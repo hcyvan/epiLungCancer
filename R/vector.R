@@ -87,6 +87,26 @@ Motif <- setRefClass(
     }
   )
 )
+## class Beta ------------------------------------------------------------------
+Beta <- setRefClass(
+  "Beta",
+  fields = list(table = "data.frame",key='character'),
+  methods = list(
+    initialize = function(bfile) {
+      beta<-read.csv(bfile,sep='\t')
+      table<<-beta
+      key<<-paste(paste(beta$X.chrom, beta$start,sep = ':'), beta$end, sep = '-')
+    },
+    getBeta=function(region){
+      data<-table[match(region,key),]
+      if (nrow(data)==1){
+        unlist(data[,-1:-3])
+      }else{
+        data
+      }
+    }
+  )
+)
 ## class SMVC ------------------------------------------------------------------
 SMVC <- setRefClass(
   "SMVC",
@@ -118,6 +138,8 @@ SMVC <- setRefClass(
     toBed = function(){
       bed<-sub("\\.smvc$", ".bed", filename)
       saveBed(table, bed,col.names=FALSE)
+      smvc<-sub("\\.smvc$", ".smvc", filename)
+      saveBed(table.ori[,c(1,4,2,3,5:ncol(vector))], smvc,col.names=FALSE)
     },
     overlap = function(bed,class=NULL){
       #' gr0: regions in MVC
@@ -149,12 +171,15 @@ SMVC <- setRefClass(
         saveBed(data, out,col.names=FALSE)
       }
     },
+    cpg2genome=function(cpgIdx){
+      data<-filter(table, cpg==cpgIdx)
+      paste0(data$chrom, ':',data$start, '-',data$end)
+    },
     show = function() {
       print(table)
     }
   )
 )
-
 
 #smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
 ## class MVM ------------------------------------------------------------------
@@ -307,7 +332,8 @@ plotMotifFrac<-function(data){
   return(col_annotation)
 }
 
-plotWindowBase<-function(data){
+
+plotWindowBase<-function(data,beta=NULL){
   row_annotation <-HeatmapAnnotation(
     df=data.frame(Stage=SAMPLE$sample2group(rownames(data))),
     col = list(Stage =COLOR_MAP_GROUP),
@@ -315,12 +341,21 @@ plotWindowBase<-function(data){
     show_annotation_name =FALSE,
     which = 'row'
   )
+  beta_annotation=NULL
+  if (!is.null(beta)){
+    p<-anno_points(beta,which='row',pch = 20,size = unit(0.8, "mm"),ylim = c(0,1))
+    beta_annotation = HeatmapAnnotation(
+      p = p,
+      which = 'row',
+      show_annotation_name = FALSE)
+  }
   m<-as.matrix(data)
   m<-log10(m+0.00001)
   h<-Heatmap(m,
              name='Log10(count)',
              col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
              left_annotation  = row_annotation,
+             right_annotation = beta_annotation,
              # top_annotation =col_annotation,
              # height = unit(1, "npc"),
              cluster_rows = FALSE,
@@ -344,10 +379,10 @@ plotWindowBase2<-function(data){
   )
 }
 
-plotWindow<-function(data,window=5){
+plotWindow<-function(data,window=5,beta=NULL){
   annoMotif<-plotMotifAnno2(window)
   annoFrac<-plotMotifFrac(data)
-  h<-plotWindowBase(data)
+  h<-plotWindowBase(data,beta=beta)
   annoFrac%v%h%v%annoMotif
 }
 plotWindow2<-function(data,window=5){
@@ -397,23 +432,47 @@ plotMvcWithAnno<-function(mvc){
   pp
 }
 
-plotMvcWithAnno2<-function(mvc,window=4){
+plotMvcWithAnno2<-function(mvc,window=4,group=NULL,mark=NULL,beta=NULL){
   mvc<-log(mvc+0.00001)
   m<-t(mvc)
   #m<-m[nrow(m):1,]
+  row_annotation<-NULL
+  if (!is.null(group)){
+    row_annotation <-HeatmapAnnotation(
+      df=data.frame(Stage=rep(group, nrow(m))),
+      col = list(Stage =COLOR_MAP_GROUP),
+      show_annotation_name =FALSE,
+      show_legend = FALSE,
+      which = 'row'
+    )
+  }
+  fonts<-rep(0, ncol(m))
+  if (!is.null(mark)){
+    fonts[match(mark, colnames(m))]<-5
+  }
+  beta_annotation=NULL
+  if (!is.null(beta)){
+    p<-anno_points(beta,which='col',pch = 20,size = unit(0.2, "mm"),ylim=c(0,1))
+    beta_annotation = HeatmapAnnotation(
+      p = p,
+      which = 'col',
+      show_annotation_name = FALSE)
+  }
   Heatmap(m,
-          show_heatmap_legend = FALSE,
-          col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+          show_heatmap_legend = TRUE,
+          right_annotation  = row_annotation,
+          top_annotation = beta_annotation,
+          column_names_gp = gpar(fontsize = fonts),
+          col=colorRamp2(c(0,max(m)), c("#ffffff", "#c82423")),
           show_column_dend =FALSE,
           cluster_rows = FALSE,
           cluster_columns = TRUE,
           clustering_method_columns = 'ward.D2',
           row_names_side = "left",
           show_row_names = TRUE,
-          show_column_names = FALSE
+          show_column_names = TRUE
   )
 }
-
 
 # Window size Attempts ---------------------------------------------------------
 windowcount<-sapply(3:8, function(x){
@@ -557,7 +616,7 @@ ggsave(file.path(CONFIG$DataResult, 'mv.smvp.ssp.png'), plot = pp, width = 8, he
 # dev.off()
 
 
-# DMR vs SMV -------------------------------------------------------------------
+# SMVC -------------------------------------------------------------------
 dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
 
 groups<-names(COLOR_MAP_GROUP)[-1]
@@ -568,7 +627,6 @@ files<-sapply(groups, function(x){
 smvcs<-lapply(files, function(x){
   SMVC(x)
 })
-
 ## smvc to bed ----------------------------------------------------------------
 ._<-lapply(smvcs, function(smvc){
   smvc$toBed()
@@ -592,25 +650,68 @@ do.call(rbind,lapply(groups, function(x){
   smvc$saveOverlap(dmr$hypo, 'hypo')
   smvc$saveOverlap(dmr$hyper, 'hyper')
 })
-# TEST -------------------------------------------------------------------------
-bfile<-file.path(CONFIG$DataInter,'vector/w4/beta/LUAD.smvc.beta.bed')
-
-beta<-read.csv(bfile,sep='\t')
-
-m<-beta[,-1:-3]
-Heatmap(m,
-        # show_heatmap_legend = FALSE,
-        # col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
-        # show_column_dend =FALSE,
-        cluster_rows = TRUE,
-        cluster_columns = FALSE,
-        show_row_names = FALSE,
-        show_column_names = TRUE
-)
-
-
-# Heatmap of SMV  --------------------------------------------------------------
+# Heatmap of SMVC  --------------------------------------------------------------
 ## Lung cancer -----------------------------------------------------------------
+### LUAD ------------------------------------------------------------------------
+smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
+beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/LUAD_1.0_0.4.sample.beta.bed'))
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
+
+arrange(smvc$hypo, desc(ssp))%>%head
+arrange(smvc$hyper, desc(ssp))%>%head
+
+cpg<-2188467
+bvalue<-beta$getBeta(smvc$cpg2genome(cpg))
+data<-mvm$getByCpG(cpg)
+
+#saveImage("mv.window.pdf",width = 4.6,height = 6)
+plotWindow(data,4,bvalue)
+#dev.off()
+
+cpg<-9589060
+bvalue<-beta$getBeta(smvc$cpg2genome(cpg))
+data<-mvm$getByCpG(cpg)
+
+#saveImage("mv.window.pdf",width = 4.6,height = 6)
+plotWindow(data,4,bvalue)
+#dev.off()
+### SCLC -----------------------------------------------------------------------
+#### Figure 5B,C ---------------------------------------------------------------
+smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/SCLC_1.0_0.4.smvc'))
+beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/SCLC_1.0_0.4.sample.beta.bed'))
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/SCLC.sample.mvm'))
+arrange(smvc$hypo, desc(ssp))%>%head
+arrange(smvc$hyper, desc(ssp))%>%head
+cpg<-4505825
+bvalue<-beta$getBeta(smvc$cpg2genome(cpg))
+data<-mvm$getByCpG(cpg)
+saveImage("smvc.SCLC.hypo.4505825.pdf",width = 5,height = 6)
+plotWindow(data,4,bvalue)
+dev.off()
+cpg<-16373819
+bvalue<-beta$getBeta(smvc$cpg2genome(cpg))
+data<-mvm$getByCpG(cpg)
+saveImage("smvc.SCLC.hyper.16373819.pdf",width = 5,height = 6)
+plotWindow(data,4,bvalue)
+dev.off()
+
+#### Figure 5A -----------------------------------------------------------------
+beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/SCLC_1.0_0.4.group.beta.bed'))
+mark<-c(4505825, 16373819)
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/SCLC.group.mvm'))
+p0<-plotMvcWithAnno2(mvm$getBySample('CTL',4),4,'CTL',mark,beta$table$CTL)
+p1<-plotMvcWithAnno2(mvm$getBySample('LUAD',4),4,'LUAD',mark,beta$table$LUAD)
+p2<-plotMvcWithAnno2(mvm$getBySample('LUSC',4),4,'LUSC',mark,beta$table$LUSQ)
+p3<-plotMvcWithAnno2(mvm$getBySample('LCC',4),4,'LCC',mark,beta$table$LCC)
+p4<-plotMvcWithAnno2(mvm$getBySample('SCLC',4),4,'SCLC',mark,beta$table$SCLC)
+saveImage("smvc.SCLC.pdf",width =12,height = 6)
+p0%v%p1%v%p2%v%p3%v%p4
+dev.off()
+
+
+
+
+
 ### CpG ------------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
 data<-mvm$getByCpG(10958214) # methy level不明显
@@ -639,14 +740,32 @@ pp2<-plotMvcWithAnno(mvm$getBySample('LUSC'))
 pp3<-plotMvcWithAnno(mvm$getBySample('LCC'))
 pp4<-plotMvcWithAnno(mvm$getBySample('SCLC'))
 pp0/pp1/pp2/pp3/pp4
-## plot Mvc2 -----------------------------------------------------------------------
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUSC.group.mvm'))
-p0<-plotMvcWithAnno2(mvm$getBySample('CTL',4))
-p1<-plotMvcWithAnno2(mvm$getBySample('LUAD',4))
-p2<-plotMvcWithAnno2(mvm$getBySample('LUSC',4))
-p3<-plotMvcWithAnno2(mvm$getBySample('LCC',4))
-p4<-plotMvcWithAnno2(mvm$getBySample('SCLC',4))
-p0%v%p1%v%p2%v%p3%v%p4
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # All other human cell type ----------------------------------------------------
 
