@@ -237,9 +237,10 @@ MVH <- setRefClass(
   )
 )
 ## plot function ---------------------------------------------------------------
-plotMotifAnno<-function(m=5, ori='v'){
+plotMotifAnnoGgplot<-function(m=5, ori='v',reverse=FALSE){
   motif<-Motif(m)
   vcs<-motif$motif2vector()
+  seqi<-1:length(vcs)
   sites<-lapply(1:length(vcs), function(y){
     xi<-sapply(1:length(vcs[[y]]),function(x){
       c(x, y,vcs[[y]][x])
@@ -258,6 +259,9 @@ plotMotifAnno<-function(m=5, ori='v'){
   }else if(ori=='h') {
     data<-data.frame(x0=data$V2,y0=data$V1, r=data$r, x=data$motif, y=data$V1, fill=data$C)
   }
+  if (reverse){
+    data$y0<-max(data$y0)-data$y0+1
+  }
   ggplot(data, aes(x0 = x0, y0 = y0, r = r,x=x,y=y,fill=fill)) +
     geom_circle(color = "black")+
     scale_fill_manual(values = color_map) +
@@ -266,7 +270,7 @@ plotMotifAnno<-function(m=5, ori='v'){
     theme(legend.position = "none")
 }
 
-plotMotifAnno2<-function(count, ori='h'){
+plotMotifAnnoHeatmap<-function(count, ori='h'){
   motif<-Motif(count)
   m = motif$motif2vector(format='mat')
   if (ori=='v'){
@@ -380,14 +384,14 @@ plotWindowBase2<-function(data){
 }
 
 plotWindow<-function(data,window=5,beta=NULL){
-  annoMotif<-plotMotifAnno2(window)
+  annoMotif<-plotMotifAnnoHeatmap(window)
   annoFrac<-plotMotifFrac(data)
   h<-plotWindowBase(data,beta=beta)
   annoFrac%v%h%v%annoMotif
 }
 plotWindow2<-function(data,window=5){
   h<-plotWindowBase2(data)
-  annoMotif<-plotMotifAnno2(window)
+  annoMotif<-plotMotifAnnoHeatmap(window)
   h%v%annoMotif
 }
 
@@ -405,12 +409,12 @@ mvcReshape<-function(mvc){
   ret
 }
 
-plotMvc<-function(mvc,window=4){
+plotMvc<-function(mvc, window=4){
   data<-mvcReshape(mvc)
   motif<-Motif(window)
   data$motif<-motif$motifs[data$y]
   data$y<-factor(as.character(data$y),levels = as.character(unique(sort(data$y))))
-  data$motif<-factor(data$motif, levels = motif$motifs)
+  data$motif<-factor(data$motif, levels = rev(motif$motifs))
   data$num<-log(data$num)
   ggplot(data=data, aes(x=x, y=motif,color=num)) +
     geom_point()+
@@ -425,14 +429,18 @@ plotMvc<-function(mvc,window=4){
       axis.title.y = element_blank()
     )
 }
-plotMvcWithAnno<-function(mvc){
-  p0<-plotMotifAnno(4)
+plotMvc(mvm$getBySample('LUAD'))
+
+
+
+plotSmvcRegion<-function(mvc){
+  p0<-plotMotifAnnoGgplot(4,reverse = TRUE)
   p1<-plotMvc(mvc,4)
   pp<-p0+p1+plot_layout(widths = c(1, 29))
   pp
 }
 
-plotMvcWithAnno2<-function(mvc,window=4,group=NULL,mark=NULL,beta=NULL){
+plotSmvcHeatmap<-function(mvc,window=4,group=NULL,mark=NULL,beta=NULL){
   mvc<-log(mvc+0.00001)
   m<-t(mvc)
   #m<-m[nrow(m):1,]
@@ -530,7 +538,7 @@ qc.file<-file.path(CONFIG$DataInter,'vector/w6/lung.mvc.qc')
 qc<-read.csv(qc.file, sep = '\t', header = TRUE, check.names = FALSE)
 qc$agv
 win4<-as.numeric(strsplit(qc$agv, split='\\|')[[1]])
-pa<-plotMotifAnno(6,'h')
+pa<-plotMotifAnnoGgplot(6,'h')
 motif<-Motif(6)
 data<-data.frame(x=motif$get_motif_array(),y=win4)
 p<-ggplot(data=data, aes(x=x, y=y)) +
@@ -680,8 +688,8 @@ plotWindow(data,4,bvalue)
 smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/SCLC_1.0_0.4.smvc'))
 beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/SCLC_1.0_0.4.sample.beta.bed'))
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/SCLC.sample.mvm'))
-arrange(smvc$hypo, desc(ssp))%>%head
-arrange(smvc$hyper, desc(ssp))%>%head
+arrange(smvc$hypo, desc(ssp))%>%head #chr1:4505825
+arrange(smvc$hyper, desc(ssp))%>%head #chr10:16373819
 cpg<-4505825
 bvalue<-beta$getBeta(smvc$cpg2genome(cpg))
 data<-mvm$getByCpG(cpg)
@@ -695,19 +703,30 @@ saveImage("smvc.SCLC.hyper.16373819.pdf",width = 5,height = 6)
 plotWindow(data,4,bvalue)
 dev.off()
 
-#### Figure 5A -----------------------------------------------------------------
+#### Figure 5A smvc heatmap ----------------------------------------------------
 beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/SCLC_1.0_0.4.group.beta.bed'))
 mark<-c(4505825, 16373819)
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/SCLC.group.mvm'))
-p0<-plotMvcWithAnno2(mvm$getBySample('CTL',4),4,'CTL',mark,beta$table$CTL)
-p1<-plotMvcWithAnno2(mvm$getBySample('LUAD',4),4,'LUAD',mark,beta$table$LUAD)
-p2<-plotMvcWithAnno2(mvm$getBySample('LUSC',4),4,'LUSC',mark,beta$table$LUSQ)
-p3<-plotMvcWithAnno2(mvm$getBySample('LCC',4),4,'LCC',mark,beta$table$LCC)
-p4<-plotMvcWithAnno2(mvm$getBySample('SCLC',4),4,'SCLC',mark,beta$table$SCLC)
+p0<-plotSmvcHeatmap(mvm$getBySample('CTL',4),4,'CTL',mark,beta$table$CTL)
+p1<-plotSmvcHeatmap(mvm$getBySample('LUAD',4),4,'LUAD',mark,beta$table$LUAD)
+p2<-plotSmvcHeatmap(mvm$getBySample('LUSC',4),4,'LUSC',mark,beta$table$LUSQ)
+p3<-plotSmvcHeatmap(mvm$getBySample('LCC',4),4,'LCC',mark,beta$table$LCC)
+p4<-plotSmvcHeatmap(mvm$getBySample('SCLC',4),4,'SCLC',mark,beta$table$SCLC)
 saveImage("smvc.SCLC.pdf",width =12,height = 6)
 p0%v%p1%v%p2%v%p3%v%p4
 dev.off()
 
+#### Figure 5xxx smvc region ----------------------------------------------------
+#mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.4505825.chr1_4505805_4505845.group.mvm'))
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.16373819.chr10_16373799_16373839.group.mvm')) # OK
+#mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.4505825.chr1_4505775_4505875.group.mvm')) # ok
+
+pp0<-plotSmvcRegion(mvm$getBySample('CTL'))
+pp1<-plotSmvcRegion(mvm$getBySample('LUAD'))
+pp2<-plotSmvcRegion(mvm$getBySample('LUSC'))
+pp3<-plotSmvcRegion(mvm$getBySample('LCC'))
+pp4<-plotSmvcRegion(mvm$getBySample('SCLC'))
+pp0/pp1/pp2/pp3/pp4
 
 
 
@@ -730,21 +749,6 @@ plotWindow2(data)
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
 data<-mvm$getBySample('Lung-Alveolar-Epithelial-Z000000T1')
 plotWindow2(data)
-
-# SMV in Genome ----------------------------------------------------------------
-## plot Mvc1 -----------------------------------------------------------------------
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.group.mvm'))
-pp0<-plotMvcWithAnno(mvm$getBySample('CTL'))
-pp1<-plotMvcWithAnno(mvm$getBySample('LUAD'))
-pp2<-plotMvcWithAnno(mvm$getBySample('LUSC'))
-pp3<-plotMvcWithAnno(mvm$getBySample('LCC'))
-pp4<-plotMvcWithAnno(mvm$getBySample('SCLC'))
-pp0/pp1/pp2/pp3/pp4
-
-
-
-
-
 
 
 
