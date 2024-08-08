@@ -557,7 +557,7 @@ p<-ggplot(data=data, aes(x=x, y=y)) +
 saveImage("mv.average.MVs.w4.pdf",width = 4.6,height = 2.6)
 p/pa
 dev.off()
-# Figure S2 smvp=0.3 and ssp=0.9 -----------------------------------------------
+## Figure S2 smvp=0.3 and ssp=0.9 -----------------------------------------------
 plotFrac<-function(group="LUAD", window='w4'){
   vfile<-file.path(CONFIG$DataInter,'vector',window,paste0(group,'_0.80_0.1.mvc'))
   vector<-loadData(vfile,ext = 'bed')
@@ -626,21 +626,20 @@ ggsave(file.path(CONFIG$DataResult, 'mv.smvp.ssp.png'), plot = pp, width = 8, he
 
 # SMVC -------------------------------------------------------------------
 dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
-
 groups<-names(COLOR_MAP_GROUP)[-1]
 files<-sapply(groups, function(x){
   file.path(CONFIG$DataInter,'vector',window,paste0(x,'_1.0_0.4.smvc'))
 })
-
 smvcs<-lapply(files, function(x){
   SMVC(x)
 })
-## smvc to bed ----------------------------------------------------------------
+## Data cleaning and statistics
+### SMVC to bed ----------------------------------------------------------------
 ._<-lapply(smvcs, function(smvc){
   smvc$toBed()
 })
 
-## Intersect ----------------------------------------------------------------
+### Intersect with DMR ----------------------------------------------------------------
 do.call(rbind,lapply(groups, function(x){
   dmr<-dmrList[[x]]
   smvc<-smvcs[[x]]
@@ -651,15 +650,14 @@ do.call(rbind,lapply(groups, function(x){
   data<-data.frame(group=x,data,class=c('hypo','hyper'))
   data
 }))
-## Save MVC and DMR -------------------------------------------------------------
+### Save MVC and DMR -------------------------------------------------------------
 ._<-lapply(groups, function(x){
   dmr<-dmrList[[x]]
   smvc<-smvcs[[x]]
   smvc$saveOverlap(dmr$hypo, 'hypo')
   smvc$saveOverlap(dmr$hyper, 'hyper')
 })
-# Heatmap of SMVC  --------------------------------------------------------------
-## Lung cancer -----------------------------------------------------------------
+## Visualization -----------------------------------------------------------------
 ### LUAD ------------------------------------------------------------------------
 smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
 beta<-Beta(file.path(CONFIG$DataInter,'vector/w4/beta/LUAD_1.0_0.4.sample.beta.bed'))
@@ -728,9 +726,54 @@ pp3<-plotSmvcRegion(mvm$getBySample('LCC'))
 pp4<-plotSmvcRegion(mvm$getBySample('SCLC'))
 pp0/pp1/pp2/pp3/pp4
 
+# HOMER analysis ---------------------------------------------------------------
+fc<-1.3
+q<-0.01
+
+LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUAD_1.0_0.4.hypo.gr0'),q, fc)
+LUAD.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUAD_1.0_0.4.hyper.gr0'),q, fc)
+LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUSC_1.0_0.4.hypo.gr0'),q, fc)
+LUSC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUSC_1.0_0.4.hyper.gr0'),q, fc)
+LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LCC_1.0_0.4.hypo.gr0'),q, fc)
+LCC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LCC_1.0_0.4.hyper.gr0'),q, fc)
+SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/SCLC_1.0_0.4.hypo.gr0'),q, fc)
+SCLC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/SCLC_1.0_0.4.hyper.gr0'),q, fc)
+
+fmg<-list(
+  LUAD.hypo=LUAD.hypo,
+  LUSC.hypo=LUSC.hypo,
+  LCC.hypo=LCC.hypo,
+  SCLC.hypo=SCLC.hypo,
+  LUAD.hyper=LUAD.hyper,
+  LUSC.hyper=LUSC.hyper,
+  LCC.hyper=LCC.hyper,
+  SCLC.hyper=SCLC.hyper
+)
+
+output<-lapply(names(fmg), function(n){
+  x<-fmg[[n]]
+  if(nrow(x)>30){
+    out<-x[1:30,]
+  }else{
+    out<-x
+  }
+  if (nrow(out)>0){
+    out$class<-n
+  }
+  out
+})
+output<-do.call(rbind, output)
+write.csv(output,file.path(CONFIG$DataInter,'vector/w4/homer','smvc.homer.csv'),row.names = FALSE)
 
 
 
+
+
+
+
+
+
+# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx------
 ### CpG ------------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
 data<-mvm$getByCpG(10958214) # methy level不明显
