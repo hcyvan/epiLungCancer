@@ -410,35 +410,12 @@ dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rd
 cgIslands.gr<-genomicRegion$cgIslands
 tss.gr<-genomicRegion$tss
 
-plot.dmr.density<-function(class,target.gr, lim,title="",xlab="Distance"){
-  dist<-lapply(dmrList, function(x){
-    bed<-x[[class]]
-    distTo<-annoDistQueryToSubject(bed2gr(bed),target.gr)
-    distTo
-  })
-  
-  dens<-lapply(dist,function(x){
-    d0<-x[abs(x$distanceToSubject)<lim,]
-    density(d0$distanceToSubject)
-  })
-  xlim<-range(sapply(dens, "[", "x"))
-  ylim<-range(sapply(dens, "[", "y"))
-  plot(NA, main = title,
-       xlab = xlab,
-       ylab = "DMRs Density",
-       xlim=xlim,
-       ylim=ylim)
-  for(i in 1:length(COLOR_MAP_GROUP)) {
-    lines(dens[[names(COLOR_MAP_GROUP)[i]]], lwd = 2,col=COLOR_MAP_GROUP[i])
-  }
-  legend("topleft", legend=names(COLOR_MAP_GROUP), fill=COLOR_MAP_GROUP, bty = "n")
-}
 saveImage("dmr.density.genomicRegion.pdf",width = 5,height = 5.6)
 par(mfrow = c(2, 2))
-plot.dmr.density('hypo',tss.gr, lim=5000, "Hypo",xlab='Distance to TSS')
-plot.dmr.density('hypo',cgIslands.gr, lim=5000,title="Hypo",xlab='Distance to CGI')
-plot.dmr.density('hyper',tss.gr, lim=5000, "Hyper",xlab='Distance to TSS')
-plot.dmr.density('hyper',cgIslands.gr, lim=5000, "Hyper",xlab='Distance to CGI')
+plotBedListDensity(dmrList,'hypo','tss', lim=5000, "Hypo",xlab='Distance to TSS')
+plotBedListDensity(dmrList,'hypo','cgi', lim=5000,title="Hypo",xlab='Distance to CGI')
+plotBedListDensity(dmrList,'hyper','tss', lim=5000, "Hyper",xlab='Distance to TSS')
+plotBedListDensity(dmrList,'hyper','cgi', lim=5000, "Hyper",xlab='Distance to CGI')
 dev.off()
 #'----------------------------------------------------------------------------------------------------------------------
 #' GREAT analysis
@@ -448,7 +425,7 @@ greatBP<-lapply(names(dmrList), function(x){
   lapply(names(dmrList[[x]]), function(y){
     dmr<-dmrList[[x]][[y]]
     print(paste(x, y))
-    gr<-bed2GRanges(dmr)
+    gr<-bed2gr(dmr)
     great(gr, "GO:BP", "TxDb.Hsapiens.UCSC.hg38.knownGene")
   })
 })
