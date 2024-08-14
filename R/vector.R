@@ -368,15 +368,6 @@ bed[match(unique(motif$PositionID),bed$feature),]
 # 449,450,451,452  chr9:124330599-124330885
 smvcs$SCLC$hypo[c(449,450,451,452),]
 
-
-
-
-
-
-
-
-
-
 # SMVC Density near TSS and CGI -------------------------------------------------
 genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
 cgIslands.gr<-genomicRegion$cgIslands
@@ -456,19 +447,7 @@ saveGreatBP(file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.great.BP.reduce.r
             file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.great.BP.reduce.csv'),
             file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.top.great.BP.reduce.csv'))
 
-
-#'=============================================================================
-
-
-# xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx------
-### CpG ------------------------------------------------------------------------
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/mvm/LUAD.sample.mvm'))
-data<-mvm$getByCpG(10958214) # methy level不明显
-#saveImage("mv.window.pdf",width = 4.6,height = 6)
-plotWindow(data,4)
-#dev.off()
-
-
+# Public data ------------------------------------------------------------------
 ## GSE186458 -------------------------------------------------------------------
 ### CpG ---------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
