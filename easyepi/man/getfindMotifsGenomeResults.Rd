@@ -4,10 +4,17 @@
 \alias{getfindMotifsGenomeResults}
 \title{Extract the results from the findMotifsGenome.pl script}
 \usage{
-getfindMotifsGenomeResults(result.dir, q.value = NULL, foldchange = NULL)
+getfindMotifsGenomeResults(
+  result.dir,
+  p.value = NULL,
+  q.value = NULL,
+  foldchange = NULL
+)
 }
 \arguments{
 \item{result.dir}{the result directory of  findMotifsGenome.pl}
+
+\item{p.value}{the maximum p-value of the results}
 
 \item{q.value}{the maximum q-value of the results}
 

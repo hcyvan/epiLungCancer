@@ -21,6 +21,7 @@ CONFIG <- yaml::read_yaml(configPath)
 CONFIG['DataRaw']<-file.path(CONFIG$DataDir, 'raw')
 CONFIG['DataInter']<-file.path(CONFIG$DataDir, 'intermediate')
 CONFIG['DataResult']<-file.path(CONFIG$DataDir, 'result')
+CONFIG['Result']<-file.path(getwd(), 'result')
 # Base Function ----------------------------------------------------------------
 ## IO --------------------------------------------------------------------------
 getExt <- function(file_path) {
@@ -132,8 +133,10 @@ grOverlap<-function(gr0,gr1){
   overlaps<-findOverlaps(gr0,gr1)
   i0<-unique(queryHits(overlaps))
   i1<-unique(subjectHits(overlaps))
+  gr0ii<-gr0[queryHits(overlaps)]
   gr0i<-gr0[i0]
   gr0u<-gr0[-i0]
+  gr1ii<-gr1[subjectHits(overlaps)]
   gr1i<-gr1[i1]
   gr1u<-gr1[-i1]
   gr0stat<-unlist(
@@ -156,9 +159,11 @@ grOverlap<-function(gr0,gr1){
     gr0=gr0,
     gr0u=gr0u,
     gr0i=gr0i,
+    gr0ii=gr0ii,
     gr1=gr1,
     gr1u=gr1u,
-    gr1i=gr1i
+    gr1i=gr1i,
+    gr1ii=gr1ii
   )
 }
 
