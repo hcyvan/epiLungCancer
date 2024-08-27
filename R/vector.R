@@ -142,18 +142,29 @@ ggsave(file.path(CONFIG$DataResult, 'mv.smvp.ssp.png'), plot = pp, width = 8, he
 # pp
 # dev.off()
 
+
+vfile<-file.path(CONFIG$DataInter,'vector/w4',paste0('LUAD','_0.80_0.1.smvc'))
+vector<-loadData(vfile,ext = 'bed')
+vector<-vector[,c(1,3,4,2,5:ncol(vector))]
+vector<-(filter(vector, V11>=0.9, V12>0.4))
+dim(vector)
 # SMVC -------------------------------------------------------------------
-dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
 groups<-names(COLOR_MAP_GROUP)[-1]
-files<-sapply(groups, function(x){
-  file.path(CONFIG$DataInter,'vector/w4',paste0(x,'_1.0_0.4.smvc'))
+files<-lapply(groups, function(x){
+  list(
+    a=file.path(CONFIG$DataInter,'vector/w4',paste0(x,'_1.0_0.4.smvc')),
+    b=file.path(CONFIG$DataInter,'vector/w4',paste0(x,'.smvc'))
+  )
 })
+# names(files)<-groups
+# files[[3]]$a<-file.path(CONFIG$DataInter,'vector/w4','LCC_1.0_0.3.smvc')
 smvcs<-lapply(files, function(x){
-  SMVC(x)
+  SMVC(x$a,x$b)
 })
 saveRDS(smvcs,file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
 smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
 ## Save SMVC -------------------------------------------------------------------
+dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
 ._<-lapply(FACTOR_LEVEL_GROUP[-1], function(x){
   dmr<-dmrList[[x]]
   smvc<-smvcs[[x]]
@@ -447,77 +458,8 @@ saveGreatBP(file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.great.BP.reduce.r
             file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.great.BP.reduce.csv'),
             file.path(CONFIG$DataInter, 'vector/w4/great/smvcs.top.great.BP.reduce.csv'))
 
-# Public data ------------------------------------------------------------------
-## GSE186458 -------------------------------------------------------------------
-### CpG ---------------------------------------------------------------------
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
-data<-mvm$getByCpG(497192)
-plotWindow2(data)
-
-### Sample ---------------------------------------------------------------------
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/LUAD.sample.mvm'))
-data<-mvm$getBySample('Lung-Alveolar-Epithelial-Z000000T1')
-plotWindow2(data)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# All other human cell type ----------------------------------------------------
-
-
-mvh.file<-file.path(CONFIG$DataInter,'vector/GSE79279/GSE79277/smvh/LUAD.smvh')
-mvh.file<-file.path(CONFIG$DataInter,'vector/GSE79279/GSE79277/smvh/SCLC.smvh')
-mvh.file<-file.path(CONFIG$DataInter,'vector/GSE79279/GSE79277/smvh/LCC.smvh')
-mvh.file<-file.path(CONFIG$DataInter,'vector/GSE79279/GSE79277/smvh/LUSC.smvh')
-
-
-
-# mvh.file<-file.path(CONFIG$DataInter,'vector/GSE186458/w5/mvh','LUAD.smvh')
-# # mvh.file<-file.path(CONFIG$DataInter,'vector/w5/mvh','LUSC.smvh')
-# # mvh.file<-file.path(CONFIG$DataInter,'vector/w5/mvh','LCC.smvh')
-# mvh.file<-file.path(CONFIG$DataInter,'vector/GSE186458/w5/mvh','SCLC.smvh')
-# mvh.file<-file.path(CONFIG$DataInter,'vector/w5/mvh','LUAD.smvh')
-
-# mvh.file<-file.path(CONFIG$DataInter,'vector/w5/mvh','SCLC_1.4.smvh')
-# mvh.file<-file.path(CONFIG$DataInter,'vector/w5/mvh','LUAD_1.4.smvh')
-
-mvh<-MVH(mvh.file)
-
-m<-mvh$matrix()
-m<-m[rowSums(m!=0)!=0,]
-
-m<-log(m+0.0001)%>%t
-# m<-mvh$matrix()%>%t%>%log
-#saveImage("aaa.sclc.pdf",width = 49,height = 30)
-#plotWindowBase2(m)
-#dev.off()
-
-Heatmap(m,
-        name='Count',
-        col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
-        # row_names_gp = gpar(fontsize = 5),
-        cluster_rows = FALSE,
-        cluster_columns = FALSE,
-        show_row_names = TRUE,
-        show_column_names = TRUE
-)
 
 

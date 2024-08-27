@@ -117,10 +117,14 @@ SMVC <- setRefClass(
                 table.ori = "data.frame",
                 reduceBed = 'list',
                 reduceGr = 'list',
+                filename2='character',
                 filename='character'),
   methods = list(
-    initialize = function(mvm.file) {
+    initialize = function(mvm.file,mvm.file2=NULL) {
       filename<<-mvm.file
+      if (!is.null(mvm.file2)){
+        filename2<<-mvm.file2
+      }
       table.ori<<-readSMVC(mvm.file)
       if (!is.null(table.ori)){
         table<<-dplyr::select(table.ori, 'chrom', 'start', 'end', 'cpg', 'mvs', 'c_num','smvp','ssp','i0','i1','i0v0','i1v0','labels')
@@ -163,25 +167,27 @@ SMVC <- setRefClass(
       ov
     },
     .freeze=function(ouDir,dmr=NULL,class="hypo", do.reduce=FALSE){
-      smvc.file<-sub("\\.smvc$", ".final.smvc", filename)
+      smvc.file<-sub("\\.smvc$", ".final.smvc", filename2)
       saveBed(table.ori[,c(1,4,2,3,5:ncol(table.ori))], smvc.file, col.names=FALSE)
       if (do.reduce){
         out.suffix<-'.reduce.bed'
         table.data<-reduceBed[[class]]
+        table.data.table<-reduceBed$table
       }else{
         out.suffix<-'.bed'
         table.data<-.self[[class]]
+        table.data.table<-.self$table
         # table.data<-table.data[,1:3]
         # table.data$feature<-bed2feature(table.data)
       }
-      bed.file<-file.path(ouDir,sub("\\.smvc$", out.suffix, basename(filename)))
-      saveBed(table.data, bed.file,col.names=FALSE)
+      bed.file<-file.path(ouDir,sub("\\.smvc$", out.suffix, basename(filename2)))
+      saveBed(table.data.table, bed.file,col.names=FALSE)
       if (!is.null(dmr)){
         ov<-overlap(table.data,dmr)
         for (x in c("gr0","gr0u","gr0i","gr1","gr1u","gr1i")){
           data<-ov[[x]]
           data<-gr2bed(data)
-          bed.file<-file.path(ouDir,sub("\\.smvc$", paste0('.',class,'.',x,out.suffix), basename(filename)))
+          bed.file<-file.path(ouDir,sub("\\.smvc$", paste0('.',class,'.',x,out.suffix), basename(filename2)))
           data$feature<-bed2feature(data)
           data<-dplyr::select(data, chrom, start,end,feature)
           saveBed(data, bed.file,col.names=FALSE)
@@ -204,8 +210,9 @@ SMVC <- setRefClass(
     }
   )
 )
-#smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
+#smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.2.smvc'),file.path(CONFIG$DataInter,'vector/w4/LUAD.smvc'))
 #smvc$freeze(file.path(CONFIG$DataInter,'vector/w4/bed'), dmrList$LUAD)
+
 ## class MVM ------------------------------------------------------------------
 MVM <- setRefClass(
   "MVM",
@@ -253,10 +260,15 @@ MVH <- setRefClass(
       row<-table[table$cpg==cpg.idx,-1:-2]
       return(unlist(row))
     },
-    matrix=function(mvs){
+    matrix=function(col.name.pattern=NULL){
+
       m<-table[,-1:-2]
       rownames(m)<-table$cpg
-      return(as.matrix(m))
+      m<-as.matrix(m)
+      if (!is.null(col.name.pattern)){
+        m<-m[,sapply(colnames(m), function(x){grepl(col.name.pattern,x)})]
+      }
+      return(m)
     }
   )
 )
@@ -405,13 +417,13 @@ plotWindowBase2<-function(data){
   )
 }
 
-plotWindow<-function(data,window=5,beta=NULL){
+plotWindow<-function(data,window=4,beta=NULL){
   annoMotif<-plotMotifAnnoHeatmap(window)
   annoFrac<-plotMotifFrac(data)
   h<-plotWindowBase(data,beta=beta)
   annoFrac%v%h%v%annoMotif
 }
-plotWindow2<-function(data,window=5){
+plotWindow2<-function(data,window=4){
   h<-plotWindowBase2(data)
   annoMotif<-plotMotifAnnoHeatmap(window)
   h%v%annoMotif
