@@ -9,6 +9,14 @@ mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/w4/LUAD.sample.mvm'))
 data<-mvm$getByCpG(174592)
 plotWindow2(data,window = 4)
 
+a<-rownames(data)
+tissues<-sapply(a, function(x){
+  xx<-strsplit(x, '-')[[1]]
+  xx<-xx[1:(length(xx)-1)]
+  paste(xx, collapse ='-')
+})%>%unique()
+length(tissues)
+dim(data)
 ### Sample ---------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/w4/LUAD.sample.mvm'))
 data<-mvm$getBySample('Lung-Alveolar-Epithelial-Z000000T1')
