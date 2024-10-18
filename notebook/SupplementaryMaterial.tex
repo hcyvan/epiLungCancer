@@ -48,12 +48,35 @@ mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
 
 \subsection{pattools}\label{sec:software-develope-pattools}
 
-pattools is a toolkit based on PAT format\cite{Loyfer2024.05.08.593132} data, inheriting both existing
-methylation algorithms and incorporating new ones.
-    {pattools} is currently under development, and the algorithms from this toolkit are primarily utilized
-in this study. The software will be introduced in a forthcoming paper.
 
-\subsubsection{pattools vector}
+Pattools is an open-source software developed using Python 3.10. It has been designed to convert
+BS-seq data into the PAT format\cite{Loyfer2024.05.08.593132}, establishing a set of convenient
+and efficient standards for downstream methylation data analysis (Figure \ref*{fig:pattools}). 
+
+The software primarily consists of four modules: PAT, reference, metrics, and detection  (Figure \ref*{fig:pattoolsStr}).
+
+\begin{itemize}
+    \item  The PAT module focuses on handling the input and output of PAT-formatted data, including converting other formats, such as BAM, into the PAT format. 
+    \item  The reference module is used to build a sequential CpG coordinate index based CpG coordinates and genome coordinates. 
+    \item  The metrics module extracts various methylation indicators from the PAT file, such as methylation level, methylation entropy, and methylation vector, which are then utilized for downstream analysis.
+    \item  The detection module employs existing algorithms to analyze PAT files from individual samples; for example, the deconvolution algorithm can estimate tissue composition from a given PAT file.
+\end{itemize}
+
+Pattools offers a series of modular command-line tools, along with an software development kit (SDK) to facilitate further development by developers. 
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=1.2\linewidth]{./img/pattoolsFlow.png}
+    \caption{The software design of pattools}
+    \label{fig:pattools}
+\end{figure}
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.6\linewidth]{./img/pattoolsStr.png}
+    \caption{Modules included in pattools}
+    \label{fig:pattoolsStr}
+\end{figure}
 
 \section{Selection of subtype-specific DMCs}\label{sec:selection-of-dmcs}
 
@@ -374,8 +397,7 @@ The analysis code of this artile a available in Github repository
 \href{https://github.com/hcyvan/epiLungCancer}{\textit{epiLungCancer}}. The sub project of \textit{epiLungCancer},
 \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}},  was developed
 to process BS-seq methylation data. Additionally, some of the analyses in this paper utilize code
-from \href{https://github.com/hcyvan/pattools}{\textit{pattools}}, which will be discussed in detail in
-separate publications.
+from \href{https://github.com/hcyvan/pattools}{\textit{pattools}}.
 
 
 % \printbibliography
