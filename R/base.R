@@ -1,8 +1,12 @@
 library(dplyr)
 library(GenomicRanges)
 library(readxl)
+library(ChIPseeker)
+library(TxDb.Hsapiens.UCSC.hg38.knownGene)
+library(org.Hs.eg.db)
 
 
+# Configure --------------------------------------------------------------------
 configDefaultPath <- './config.default.yaml'
 configPath <- './config.yaml'
 if (!file.exists(configPath)) {
@@ -17,7 +21,9 @@ CONFIG <- yaml::read_yaml(configPath)
 CONFIG['DataRaw']<-file.path(CONFIG$DataDir, 'raw')
 CONFIG['DataInter']<-file.path(CONFIG$DataDir, 'intermediate')
 CONFIG['DataResult']<-file.path(CONFIG$DataDir, 'result')
-################################################################################
+CONFIG['Result']<-file.path(getwd(), 'result')
+# Base Function ----------------------------------------------------------------
+## IO --------------------------------------------------------------------------
 getExt <- function(file_path) {
   file_name <- basename(file_path)
   parts <- strsplit(file_name, "\\.")[[1]]
@@ -28,7 +34,7 @@ getExt <- function(file_path) {
   }
 }
 
-loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE){
+loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE, no.cache=FALSE){
   if (is.null(ext)) {
     ext<-getExt(name)
   }
@@ -42,15 +48,21 @@ loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE){
   }else if(file.exists(ext.path)) {
     if(ext=='csv'){
       data<-read.csv(ext.path)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     }else if(ext=='tsv'){
       data<-read.csv(ext.path,sep = '\t',check.names = FALSE)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     }else if(ext=='bed'){
       data<-read.csv(ext.path,sep = '\t',check.names = FALSE, header=header)
-      saveRDS(data, rds.path)
+      if (!no.cache){
+        saveRDS(data, rds.path)
+      }
       data
     } else {
       stop(sprintf("The file format <%s> is not supported", ext)); 
@@ -67,13 +79,13 @@ saveImage <- function(file,...){
   }
 }
 
-saveBed<-function(bed,outfile){
+saveBed<-function(bed,outfile,...){
   if (!startsWith(colnames(bed)[1], '#')){
     colnames(bed)[1]<-paste0('#',colnames(bed)[1])
   }
-  write.table(bed,outfile,sep = '\t',quote = FALSE,row.names = FALSE)
+  write.table(bed,outfile,sep = '\t',quote = FALSE,row.names = FALSE,...)
 }
-
+## Data ------------------------------------------------------------------------
 removeNegativeOne <- function(m){
   m[rowSums(m[,4:ncol(m)]==-1)==0,]
 }
@@ -99,7 +111,79 @@ printConfidenceInterval<-function(data, conf.level=0.95){
   conf<-attributes(conf.int)$conf.level*100
   sprintf("%.4f (%d%% CI: %.4f - %.4f)", v, conf,conf.int[1],conf.int[2])
 }
-################################################################################
+## Genome Region ---------------------------------------------------------------
+annoPeak<-function(peakGr) {
+  peakAnno <- annotatePeak(peakGr, tssRegion = c(-5000, 5.000), TxDb = TxDb.Hsapiens.UCSC.hg38.knownGene)
+  peakAnno@anno$symbol<-mapIds(org.Hs.eg.db, keys = peakAnno@anno$geneId, column = "SYMBOL", keytype = "ENTREZID", multiVals = "first")
+  peakAnno@anno$ensembl<-mapIds(org.Hs.eg.db, keys = peakAnno@anno$geneId, column = "ENSEMBL", keytype = "ENTREZID", multiVals = "first")
+  anno<-peakAnno@anno
+  anno[abs(anno$distanceToTSS)<100000,]
+}
+#' Calculate the intersection and difference of two GRanges
+#'
+#' @param gr0
+#' @param gr1
+#'
+#' @return
+#' @export
+#'
+#' @examples
+#' 
+grOverlap<-function(gr0,gr1){
+  overlaps<-findOverlaps(gr0,gr1)
+  i0<-unique(queryHits(overlaps))
+  i1<-unique(subjectHits(overlaps))
+  gr0ii<-gr0[queryHits(overlaps)]
+  gr0i<-gr0[i0]
+  gr0u<-gr0[-i0]
+  gr1ii<-gr1[subjectHits(overlaps)]
+  gr1i<-gr1[i1]
+  gr1u<-gr1[-i1]
+  gr0stat<-unlist(
+    list(
+      gr0=length(gr0),
+      gr0u=length(gr0u),
+      gr0i=length(gr0i)
+    )
+  )
+  gr1stat<-unlist(
+    list(
+      gr1=length(gr1),
+      gr1u=length(gr1u),
+      gr1i=length(gr1i)
+    )
+  )
+  list(
+    gr0stat=gr0stat,
+    gr1stat=gr1stat,
+    gr0=gr0,
+    gr0u=gr0u,
+    gr0i=gr0i,
+    gr0ii=gr0ii,
+    gr1=gr1,
+    gr1u=gr1u,
+    gr1i=gr1i,
+    gr1ii=gr1ii
+  )
+}
+
+annoDistQueryToSubject<-function(query, subject){
+  midpoint<-function(gr){
+    mid<-floor((start(gr) + end(gr)) / 2)
+    start(gr)<-mid
+    end(gr)<-mid
+    gr
+  }
+  subject<-midpoint(subject)
+  hits<-distanceToNearest(query, subject)
+  query.hits<-query[queryHits(hits)]
+  subject.hits<-subject[subjectHits(hits)]
+  dist.sign<-ifelse((start(query.hits) > end(subject.hits))&(mcols(hits)$distance!=0),-1,1)
+  query.hits$distanceToSubject<-mcols(hits)$distance * dist.sign
+  query.hits
+}
+# Project ----------------------------------------------------------------------
+## Variable --------------------------------------------------------------------
 FACTOR_LEVEL_GROUP<-c('CTL', 'LUAD', 'LUSC', 'LCC','SCLC')
 COLOR_MAP_GROUP<-c('#2878b5','#c82423','#ffb15f','#fa66b3', '#925ee0')
 names(COLOR_MAP_GROUP)<-FACTOR_LEVEL_GROUP
@@ -112,7 +196,7 @@ HUMAN_CHROMSOME <- c(
   "chr22", "chrX", "chrY", "chrM"
 )
 
-
+## Function --------------------------------------------------------------------
 g2color<-function(group,alpha=NULL){
   color<-COLOR_MAP_GROUP[match(group, names(COLOR_MAP_GROUP))]
   if(!is.null(alpha)){
@@ -120,7 +204,8 @@ g2color<-function(group,alpha=NULL){
   }
   color
 }
-#################################################################################
+## Class -----------------------------------------------------------------------
+### Sample ---------------------------------------------------------------------
 Sample <- setRefClass(
   "sample",
   fields = list(table = "data.frame", list='list',color.map='data.frame'),
@@ -153,7 +238,41 @@ Sample <- setRefClass(
     }
   )
 )
-
+## Class instance -------------------------------------------------------------
 SAMPLE<-Sample()
 
+# Plot function ----------------------------------------------------------------
+plotBedListDensity<-function(bedList,class,target='tss',
+                             lim=5000,
+                             title="",
+                             xlab="Distance",
+                             color.map=COLOR_MAP_GROUP){
+  genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
+  if (target=='tss'){
+    target.gr<-genomicRegion$tss
+  }else if (target=='cgi'){
+    target.gr<-genomicRegion$cgIslands
+  }
 
+  dist<-lapply(bedList, function(x){
+    bed<-x[[class]]
+    distTo<-annoDistQueryToSubject(bed2gr(bed),target.gr)
+    distTo
+  })
+
+  dens<-lapply(dist,function(x){
+    d0<-x[abs(x$distanceToSubject)<lim,]
+    density(d0$distanceToSubject)
+  })
+  xlim<-range(sapply(dens, "[", "x"))
+  ylim<-range(sapply(dens, "[", "y"))
+  plot(NA, main = title,
+       xlab = xlab,
+       ylab = "DMRs Density",
+       xlim=xlim,
+       ylim=ylim)
+  for(i in 1:length(color.map)) {
+    lines(dens[[names(color.map)[i]]], lwd = 2,col=color.map[i])
+  }
+  legend("topleft", legend=names(color.map), fill=color.map, bty = "n")
+}

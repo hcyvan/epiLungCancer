@@ -3,6 +3,7 @@
 config.yaml
 README.html
 
+.RData
 .Rproj.user
 .Rhistory
 *.Rproj

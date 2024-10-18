@@ -1,5 +1,5 @@
 % Preamble
-\documentclass[10pt]{article}
+\documentclass[12pt,letterpaper]{article}
 \title{Supplementary Material}
 \author{Yihang Cheng}
 \date{\today}
@@ -9,9 +9,14 @@
 \usepackage{multirow}
 \usepackage{array}
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
-\usepackage{listings}
+% \usepackage{listings}
 \usepackage{xcolor}
 \usepackage{threeparttable}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+% \usepackage[style=authoryear,backend=bibtex]{biblatex}
+% \addbibresource{SupplymentaryMaterialReference.bib}
 % Document
 \begin{document}
 \maketitle
@@ -34,21 +39,44 @@ methytools is a toolkit developed for processing BS-seq methylation data.
 
 \emph{mcomppost percentile} can be used to calculate the percentile of each CpGs and add percentile columns to the DMCs files.
 
-\begin{lstlisting}[language=sh, caption={}]
+\begin{verbatim}
 mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
-                     -m ./merge.d3.all.bed.gz \
-                     -t ./sample.CTL.txt \
+                    -m ./merge.d3.all.bed.gz \
+                    -t ./sample.CTL.txt \
                      -o ./dmc.Rest.vs.CTL.percentile.txt
-\end{lstlisting}
+\end{verbatim}
 
 \subsection{pattools}\label{sec:software-develope-pattools}
 
-pattools is a toolkit based on PAT format\cite{Loyfer2024.05.08.593132} data, inheriting both existing
-methylation algorithms and incorporating new ones.
-    {pattools} is currently under development, and the algorithms from this toolkit are primarily utilized
-in this study. The software will be introduced in a forthcoming paper.
+Pattools is an open-source software developed using Python 3.10. It has been designed to convert
+BS-seq data into the PAT format\cite{Loyfer2024.05.08.593132}, establishing a set of convenient
+and efficient standards for downstream methylation data analysis (Figure \ref*{fig:pattools}). 
 
-\subsubsection{pattools vector}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\linewidth]{./img/pattoolsFlow.png}
+    \caption{The software design of pattools}
+    \label{fig:pattools}
+\end{figure}
+
+The software primarily consists of four modules: PAT, reference, metrics, and detection  (Figure \ref*{fig:pattoolsStr}).
+
+\begin{itemize}
+    \item  The PAT module focuses on handling the input and output of PAT-formatted data, including converting other formats, such as BAM, into the PAT format. 
+    \item  The reference module is used to build a sequential CpG coordinate index based CpG coordinates and genome coordinates. 
+    \item  The metrics module extracts various methylation indicators from the PAT file, such as methylation level, methylation entropy, and methylation vector, which are then utilized for downstream analysis.
+    \item  The detection module employs existing algorithms to analyze PAT files from individual samples; for example, the deconvolution algorithm can estimate tissue composition from a given PAT file.
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.6\linewidth]{./img/pattoolsStr.png}
+    \caption{Modules included in pattools}
+    \label{fig:pattoolsStr}
+\end{figure}
+
+Pattools offers a series of modular command-line tools, along with an software development kit (SDK)
+to facilitate further development by developers. 
 
 \section{Selection of subtype-specific DMCs}\label{sec:selection-of-dmcs}
 
@@ -56,9 +84,9 @@ in this study. The software will be introduced in a forthcoming paper.
 
 We employed the One-vs-Rest strategy to identify specific differentially methylated CpGs (DMCs) across various
 subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening. The target group and Background
-group are shown in the following table\ref*{tab:grouping}.
+group are shown in the following table \ref*{tab:grouping}.
 
-\begin{table}[htbp]
+\begin{table}[H]
     \begin{center}
         \caption{ Grouping of One-vs-Rest }
         \begin{tabular}{|l|l|}
@@ -74,16 +102,15 @@ group are shown in the following table\ref*{tab:grouping}.
         \end{tabular}
     \end{center}
     \label{tab:grouping}
-
 \end{table}
 
 \subsection{MOABS mcomp}
 
-Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group (Table \ref{tab:table_dmc_ount}).
-Subsequently, duplicated differentially methylated CpG sites (DMCs) across multiple groups were excluded, leaving
-only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
+Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group 
+(Table \ref{tab:table_dmc_ount}). Subsequently, duplicated differentially methylated CpG sites (DMCs) 
+across multiple groups were excluded, leaving only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
 
-\begin{table}[htbp]
+\begin{table}[H]
     \begin{center}
         \caption{The count of DMCs find by MOABS}
         \begin{threeparttable}
@@ -121,7 +148,7 @@ in hypomethylated DMCs, this relationship is reversed. If the \textit{p}-th perc
 low-methylated group is less than or equal to (\textit{100-p})-th percentile of the high-methylated
 group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{./img/dmcPercentileCut.png}
     \caption{The 85-th percentile of target and background samples in a hypomethylated DMCs}
@@ -135,15 +162,15 @@ we can identify DMCs that more stringently adhere to
 group specificity.
 
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{./img/dmcPercentileVsKeepProp}
+    \includegraphics[width=0.8\linewidth]{./img/dmcPercentileVsKeepProp}
     \caption{The remaining DMC propertion after filtering with different percentiles}
     \label{fig:dmcPK}
 \end{figure}
 
 \section{Deconvolution}\label{sec:deconvolution}
-Three deconvolution algorithms (lofer\cite{Loyfer2024.05.08.593132}, moss \cite{moss_comprehensive_2018} 
+Three deconvolution algorithms (lofer\cite{Loyfer2024.05.08.593132}, moss \cite{moss_comprehensive_2018}
 and sun\cite{sun_plasma_2015}) have been utilized to perform the deconvolution of the tissue samples.
 
 To mitigate the interference caused by the presence of numerous cell/tissue types in
@@ -152,10 +179,10 @@ implicated in lung cancer for this analysis (Table \ref*{tab:deconvolution}). Fo
 on the cell/tissue types, \textit{pattools deconv-helper} can be used to view the corresponding
 cell/tissue types for each category.
 
-\begin{table}[htbp]
+\begin{table}[H]
     \begin{center}
         \caption{Cell/Tissue types used by each algorithm }
-        \begin{tabular}{|>{\raggedright}m{2cm}|>{\raggedright}m{4cm}|>{\raggedright}m{4cm}|c|}
+        \begin{tabular}{|l|l|l|l|}
             \hline
             \textbf{Method}                         & \textbf{Refined group}                      & \textbf{Group}           & \textbf{Note} \\
             \hline
@@ -199,37 +226,181 @@ cell/tissue types for each category.
     \label{tab:deconvolution}
 \end{table}
 
-For BS-seq data, wgbstools\cite{Loyfer2024.05.08.593132} were initially employed to convert the 
-aligned BAM format data into PAT format. Subsequently, the methylation metrics required by the corresponding 
-algorithm were extracted from the PAT format for deconvolution analysis. The algorithm utilized in this 
-study for deconvolution was NNLS. All three deconvolution algorithms discussed in this article were 
+For BS-seq data, wgbstools\cite{Loyfer2024.05.08.593132} were initially employed to convert the
+aligned BAM format data into PAT format. Subsequently, the methylation metrics required by the corresponding
+algorithm were extracted from the PAT format for deconvolution analysis. The algorithm utilized in this
+study for deconvolution was NNLS. All three deconvolution algorithms discussed in this article were
 implemented using \textit{pattools deconv}.
 
 This code performs the deconvolution of a sample using algorithm developed by Sun \textit{et al.} with \textit{pattools deconv}.
 
-\begin{lstlisting}[language=sh, caption={}]
+\begin{verbatim}
 pattools deconv -m sun -g hg38 \
-        -c /path/to/references/hg38/CpG.bed.gz \
-        -p sample.pat.gz -o sample.sun.tsv \
-        --include Lungs Heart Brain T-cells B-cells Neutrophils
-\end{lstlisting}
+                -c /path/to/references/hg38/CpG.bed.gz \
+                -p sample.pat.gz -o sample.sun.tsv \
+                --include Lungs Heart Brain T-cells B-cells Neutrophils
+\end{verbatim}
+
+\section{Genes associated with lung cancer subtypes}\label{sec:genes}
+
+\subsection{Genes summary}\label{sec:genes-summary}
+
+There is no simple one-to-one relationship between lung cancer subtypes and cells of origin. Subtypes are
+influenced by both the originating cells and the driver mutations\cite{ferone_cells_2020}.
+
+\begin{table}[H]
+    \begin{center}
+        \caption{ Marker genes of interest}
+        \begin{tabular}{|l|l|l|}
+            \hline
+            \textbf{Subtype}      & \textbf{Gene} & \textbf{Note}                              \\
+            \hline
+            LUAD                  & NKX2-1        & upregulated in LUAD                        \\
+            \hline
+            \multirow{2}{*}{LUSC} & SOX2          & upregulated in LUSC                        \\
+            \cline{2-3}           & P63           & basal cell marker                          \\
+            \hline
+            \multirow{4}{*}{SCLC} & ASCL1         & \multirow{4}{*}{ref\cite{baine_sclc_2020}} \\
+            \cline{2-2}           & NEUROD1       &                                            \\
+            \cline{2-2}           & POU2F3        &                                            \\
+            \cline{2-2}           & YAP1          &                                            \\
+            \hline
+        \end{tabular}
+    \end{center}
+    \label{tab:gene-marker}
+\end{table}
+\subsection{Extraction of methylation levels in gene regulatory regions}\label{sec:gene-methylation}
+
+\section{Methylation vector}\label{sec:vector}
+
+We represent methylated CpGs as 1 and unmethylated CpGs as 0, utilizing a 
+0-1 array to indicate the methylation status of consecutive CpGs within the 
+genome. This vector, composed of n binary values, is referred to as a 
+methylation vector (MV).
+
+\subsection{Methylation vector analysis algorithm}\label{sec:ssmv}
+
+Identification of subtype-specific MVs involves the following three steps:
+
+\begin{itemize}
+    \item  Vectorization
+    \item  Clustering
+    \item  Seperating
+\end{itemize}
+
+\subsubsection{Vectorization}
+
+This step was implemented using the \textit{pattools mv-vectorization} command. For each sample, 
+a sliding window of length w CpGs is applied with a step size of 1 CpG site, resulting in a series 
+of overlapping windows where adjacent windows share w-1 CpGs. Within each window, methylated CpGs 
+are represented as 1 and unmethylated CpGs as 0, forming a 0-1 vector. Vectors with dimensions less 
+than w are discarded.
+
+\subsubsection{Clustering}
+
+This step was implemented using the \textit{pattools mv-clustering} command. Merge MVs from all 
+samples of CTL, LUAD, LUSC, LCC, and SCLC, and label each MV according to its sample and sample 
+group of origin within each window. Apply the multiple repeats and equal spacing clustering (MRESC) 
+algorithm to cluster the MVs in each window. 
+
+Alternatively, existing clustering algorithms such as 
+DBSCAN\cite{dbscanschubert}, HDBSCAN\cite{mcinnes2017hdbscan}, or KMeans\cite{kmeanskrishna} 
+may be used in place of MRESC for this step.
+
+\subsubsection{Seperating}
+
+This step was implemented using the \textit{pattools mv-separating} command.
+
+\subsection{MRESC}
+
+In comparison to conventional clustering methods, the clustering of MVs exhibits 2 distinct 
+characteristics:
+
+\begin{itemize}
+    \item  A limited number of MVs types exist within a fixed window, with a significant number 
+    of these vectors recurring frequently. These identical MVs represent the same methylation 
+    motif. In a window containing $w$ CpGs, there are $2^w$ possible methylation motifs. Each 
+    motif may be observed multiple times. 
+    \item  Methylation motifs are distributed equidistantly, forming a grid-like pattern. For 
+    example, the manhattan distance between the MVs (0,0,0,0) and (1,0,0,0) is 1, and similarly,
+    the distance between (0,0,0,0) and (0,1,0,0) is also 1.
+\end{itemize}
+
+\subsubsection{The distance between MVs}
+
+In the representation of MVs, methylated CpGs are denoted by 1, while unmethylated CpGs are denoted 
+by 0. In the representation of methylation motifs, 'C' represents methylated CpGs, and 'T' 
+represents unmethylated CpGs. The distances between two distinct motifs are calculated and then 
+sorted from smallest to largest. The distance between a given motif and itself is marked as 0. The 
+distance between two adjacent moitfs is marked as 1. The distance between two moitfs separated by 
+one interval is marked as 2, and so forth. In a window containing $w$ CpGs (Figure \ref*{fig:MRESC}), 
+each methylation motif is adjacent to $w$ neighboring motifs, with a manhattan distance of 1.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{./img/mrescDist.png}
+    \caption{
+        All possible methylation motifs within a window containing 4 CpGs and the 
+        distances between them. As the number in the heatmap increases, the distance 
+        between the motifs becomes greater
+    }
+    \label{fig:MRESC}
+\end{figure}
+
+\subsubsection{Pseudocode}
+
+Here is the pseudo code of MRESC (Algorithm \ref{alg:MRESC}). There are several key 
+functions in this algorithm.
+
+\begin{itemize}
+    \item  \textbf{countVectorsInEachMotif:} Count the number of methylation vectors representing each 
+    distinct methylation motif.
+    \item  \textbf{findNeighborsIndex:} Find the neighboring motifs of a given motif
+    \item  \textbf{findNeighborMax:} Identify the maximum MVs counts among the neighboring motifs of a given motif
+    \item  \textbf{markCluster:} Assign a cluster label to each motif
+    \item  \textbf{assignClusterLabel2Vectors:} Assign a cluster label to each MV
+\end{itemize}
+
+\begin{algorithm}[H]
+    \caption{\textbf{MRESC}}
+    \label{alg:MRESC}
+    \begin{algorithmic}
+        \STATE \textbf{Function doMRESC}(vectors, w)
+        \STATE \ \ \ \ counts $\gets$ \textbf{countVectorsInEachMotif}(vectors)
+        \STATE \ \ \ \ clusters $\gets$ \textbf{[0]} * w
+        \STATE \ \ \ \ \textbf{For} $i \gets 0$ \textbf{to} w - 1
+        \STATE \ \ \ \ \ \ \ \ \textbf{For} $j$ \textbf{in} \textbf{findNeighborsIndex}(i)
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \textbf{If} counts[i] $<$ counts[j] \textbf{then}
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textbf{Continue}
+        \STATE \ \ \ \ \ \ \ \ \textbf{EndIf}
+        \STATE \ \ \ \ \ \ \ \ max\_nb $\gets$ \textbf{findNeighborMax}(j, counts)
+        \STATE \ \ \ \ \ \ \ \ \textbf{If} counts[i] $\geq$ max\_nb \textbf{then}
+        \STATE \ \ \ \ \ \ \ \ \ \ \ \ \textbf{markCluster}(i, j, clusters)
+        \STATE \ \ \ \ \ \ \ \ \textbf{EndIf}
+        \STATE \ \ \ \ \textbf{EndFor}
+        \STATE \ \ \ \ labels $\gets$ \textbf{assignClusterLabel2Vectors}(vectors, clusters)
+        \STATE \ \ \ \ \textbf{Return} labels
+        \end{algorithmic}
+\end{algorithm}
 
 \section{Abbreviations}\label{sec:abbr}
+
 \begin{itemize}
     \item  \textbf{BS-seq}: Bisulfite sequencing
     \item  \textbf{NNLS}: non-negative least squares linear regression
+    \item  \textbf{MVs}: Methylation vectors
 \end{itemize}
+
 \section{Code availability}\label{sec:code}
 
 The analysis code of this artile a available in Github repository
-\href{https://github.com/hcyvan/epiLungCancer}{epiLungCancer}. The sub project of epiLungCancer,
+\href{https://github.com/hcyvan/epiLungCancer}{\textit{epiLungCancer}}. The sub project of \textit{epiLungCancer},
 \href{https://github.com/hcyvan/epiLungCancer/tree/main/methytools}{\textit{methytools}},  was developed
 to process BS-seq methylation data. Additionally, some of the analyses in this paper utilize code
-from \href{https://github.com/hcyvan/pattools}{pattools}, which will be discussed in detail in
-separate publications.
+from \href{https://github.com/hcyvan/pattools}{\textit{pattools}}.
 
 
-
-\bibliographystyle{plain}
+% \printbibliography
+\bibliographystyle{abbrv}
 \bibliography{SupplymentaryMaterialReference}
 \end{document}
