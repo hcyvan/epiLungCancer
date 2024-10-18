@@ -48,10 +48,16 @@ mcomppost percentile -i ./dmc.Rest.vs.CTL.txt \
 
 \subsection{pattools}\label{sec:software-develope-pattools}
 
-
 Pattools is an open-source software developed using Python 3.10. It has been designed to convert
 BS-seq data into the PAT format\cite{Loyfer2024.05.08.593132}, establishing a set of convenient
 and efficient standards for downstream methylation data analysis (Figure \ref*{fig:pattools}). 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.1\linewidth]{./img/pattoolsFlow.png}
+    \caption{The software design of pattools}
+    \label{fig:pattools}
+\end{figure}
 
 The software primarily consists of four modules: PAT, reference, metrics, and detection  (Figure \ref*{fig:pattoolsStr}).
 
@@ -62,21 +68,15 @@ The software primarily consists of four modules: PAT, reference, metrics, and de
     \item  The detection module employs existing algorithms to analyze PAT files from individual samples; for example, the deconvolution algorithm can estimate tissue composition from a given PAT file.
 \end{itemize}
 
-Pattools offers a series of modular command-line tools, along with an software development kit (SDK) to facilitate further development by developers. 
-
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=1.2\linewidth]{./img/pattoolsFlow.png}
-    \caption{The software design of pattools}
-    \label{fig:pattools}
-\end{figure}
-
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.6\linewidth]{./img/pattoolsStr.png}
     \caption{Modules included in pattools}
     \label{fig:pattoolsStr}
 \end{figure}
+
+Pattools offers a series of modular command-line tools, along with an software development kit (SDK)
+to facilitate further development by developers. 
 
 \section{Selection of subtype-specific DMCs}\label{sec:selection-of-dmcs}
 
@@ -86,7 +86,7 @@ We employed the One-vs-Rest strategy to identify specific differentially methyla
 subtypes of lung cancer, using MOABS\cite{sun_moabs_2014} for preliminary screening. The target group and Background
 group are shown in the following table \ref*{tab:grouping}.
 
-\begin{table}[!h]
+\begin{table}[H]
     \begin{center}
         \caption{ Grouping of One-vs-Rest }
         \begin{tabular}{|l|l|}
@@ -106,11 +106,11 @@ group are shown in the following table \ref*{tab:grouping}.
 
 \subsection{MOABS mcomp}
 
-Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group (Table \ref{tab:table_dmc_ount}).
-Subsequently, duplicated differentially methylated CpG sites (DMCs) across multiple groups were excluded, leaving
-only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
+Using the default parameters of MOABS, we obtained a large number of DMCs in each comparison group 
+(Table \ref{tab:table_dmc_ount}). Subsequently, duplicated differentially methylated CpG sites (DMCs) 
+across multiple groups were excluded, leaving only those specific to CTL, LUAD, LUSC, LCC, and SCLC.
 
-\begin{table}[!h]
+\begin{table}[H]
     \begin{center}
         \caption{The count of DMCs find by MOABS}
         \begin{threeparttable}
@@ -148,7 +148,7 @@ in hypomethylated DMCs, this relationship is reversed. If the \textit{p}-th perc
 low-methylated group is less than or equal to (\textit{100-p})-th percentile of the high-methylated
 group, we assert that this DMCs adheres to our screening criteria (Figure \ref*{fig:dmcPC}).
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{./img/dmcPercentileCut.png}
     \caption{The 85-th percentile of target and background samples in a hypomethylated DMCs}
@@ -162,9 +162,9 @@ we can identify DMCs that more stringently adhere to
 group specificity.
 
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=1\linewidth]{./img/dmcPercentileVsKeepProp}
+    \includegraphics[width=0.8\linewidth]{./img/dmcPercentileVsKeepProp}
     \caption{The remaining DMC propertion after filtering with different percentiles}
     \label{fig:dmcPK}
 \end{figure}
@@ -179,7 +179,7 @@ implicated in lung cancer for this analysis (Table \ref*{tab:deconvolution}). Fo
 on the cell/tissue types, \textit{pattools deconv-helper} can be used to view the corresponding
 cell/tissue types for each category.
 
-\begin{table}[htbp]
+\begin{table}[H]
     \begin{center}
         \caption{Cell/Tissue types used by each algorithm }
         \begin{tabular}{|l|l|l|l|}
@@ -248,7 +248,7 @@ pattools deconv -m sun -g hg38 \
 There is no simple one-to-one relationship between lung cancer subtypes and cells of origin. Subtypes are
 influenced by both the originating cells and the driver mutations\cite{ferone_cells_2020}.
 
-\begin{table}[htbp]
+\begin{table}[H]
     \begin{center}
         \caption{ Marker genes of interest}
         \begin{tabular}{|l|l|l|}
@@ -336,7 +336,7 @@ distance between two adjacent moitfs is marked as 1. The distance between two mo
 one interval is marked as 2, and so forth. In a window containing $w$ CpGs (Figure \ref*{fig:MRESC}), 
 each methylation motif is adjacent to $w$ neighboring motifs, with a manhattan distance of 1.
 
-\begin{figure}[ht]
+\begin{figure}[H]
     \centering
     \includegraphics[width=0.8\linewidth]{./img/mrescDist.png}
     \caption{
@@ -361,7 +361,7 @@ functions in this algorithm.
     \item  \textbf{assignClusterLabel2Vectors:} Assign a cluster label to each MV
 \end{itemize}
 
-\begin{algorithm}[ht]
+\begin{algorithm}[H]
     \caption{\textbf{MRESC}}
     \label{alg:MRESC}
     \begin{algorithmic}
