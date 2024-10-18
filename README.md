@@ -16,4 +16,4 @@ copy config.yaml.tpl to config.yaml and complete the configuration according to
 the local environment
 
 ## Cite Us
-TODO
+Cheng et al. (2024). Novel diagnosis and therapeutic strategies for small cell lung cancer based on aberrant methylation in lung cancer subtypes. (journal not determined)
