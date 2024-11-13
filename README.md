@@ -1,13 +1,16 @@
 # epiLungCancer
 
 This project houses the source code for our research on lung cancer methylation.
-Alongside data processing scripts, it encompasses two distinct sub-projects:
+Alongside data processing scripts, it encompasses one sub-project:
 
 - [methytools](./methytools): Developed for processing BS-seq methylation data.
-- [easyepi](./easyepi): Houses commonly used R methods in epigenetic research.
 
-These projects are designed to potentially serve as independent entities
+This project is designed to potentially serve as independent entities
 in the future.
+
+
+## Dependence
+- [easyepi](https://github.com/hcyvan/easyepi): R packages that need to be installed
 
 ## Usage
 ### Configuring the data directory
