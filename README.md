@@ -19,6 +19,7 @@ the local environment
 
 ## Code Description
 + [R/subtype_specific_dmc_dmr.R](./R/subtype_specific_dmc_dmr.R): R script about subtype-specific DMCs and DMRs
++ [R/vector.R](./R/vector.R): R script about methylation vector analysis
 
 ## Cite Us
 Cheng et al. (2024). Novel diagnosis and therapeutic strategies for small cell lung cancer based on aberrant methylation in lung cancer subtypes. (journal not determined)
