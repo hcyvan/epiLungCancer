@@ -8,7 +8,6 @@ Alongside data processing scripts, it encompasses one sub-project:
 This project is designed to potentially serve as independent entities
 in the future.
 
-
 ## Dependence
 - [easyepi](https://github.com/hcyvan/easyepi): R packages that need to be installed
 
@@ -17,6 +16,9 @@ in the future.
 
 copy config.yaml.tpl to config.yaml and complete the configuration according to
 the local environment
+
+## Code Description
++ [R/subtype_specific_dmc_dmr.R](./R/subtype_specific_dmc_dmr.R): R script about subtype-specific DMCs and DMRs
 
 ## Cite Us
 Cheng et al. (2024). Novel diagnosis and therapeutic strategies for small cell lung cancer based on aberrant methylation in lung cancer subtypes. (journal not determined)
