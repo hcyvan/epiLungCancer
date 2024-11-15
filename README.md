@@ -1,15 +1,10 @@
 # epiLungCancer
 
 This project houses the source code for our research on lung cancer methylation.
-Alongside data processing scripts, it encompasses one sub-project:
-
-- [methytools](./methytools): Developed for processing BS-seq methylation data.
-
-This project is designed to potentially serve as independent entities
-in the future.
 
 ## Dependence
 - [easyepi](https://github.com/hcyvan/easyepi): R packages that need to be installed
+- [methytools](https://github.com/hcyvan/methytools): Tools for processing BS-seq data
 
 ## Usage
 ### Configuring the data directory
@@ -22,4 +17,4 @@ the local environment
 + [R/vector.R](./R/vector.R): R script about methylation vector analysis
 
 ## Cite Us
-Cheng et al. (2024). Novel diagnosis and therapeutic strategies for small cell lung cancer based on aberrant methylation in lung cancer subtypes. (journal not determined)
+Cheng et al. (2024). Vector-based analysis helps uncover the abnormal methylation signals in lung cancer subtypes. (journal not determined)

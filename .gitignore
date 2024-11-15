@@ -21,3 +21,5 @@ notebook/img/
 *.synctex.gz
 *.bbl
 .snakemake
+dist
+build
