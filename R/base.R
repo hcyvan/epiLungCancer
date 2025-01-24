@@ -33,7 +33,6 @@ getExt <- function(file_path) {
     NULL
   }
 }
-
 loadData <- function(name, ext=NULL, header=FALSE, force.refresh=FALSE, no.cache=FALSE){
   if (is.null(ext)) {
     ext<-getExt(name)
@@ -208,7 +207,7 @@ g2color<-function(group,alpha=NULL){
 ### Sample ---------------------------------------------------------------------
 Sample <- setRefClass(
   "sample",
-  fields = list(table = "data.frame", list='list',color.map='data.frame'),
+  fields = list(table = "data.frame",table.ori = "data.frame", list='list',color.map='data.frame'),
   methods = list(
     initialize = function(data) {
       data<-read_excel(file.path(CONFIG$DataRaw, 'SupplementaryData.xlsx'),sheet = 'sample')
@@ -216,21 +215,22 @@ Sample <- setRefClass(
       data$Group<-factor(data$Group, levels = FACTOR_LEVEL_GROUP)
       data<-arrange(data, Group)
       data$Color<-COLOR_MAP_GROUP[match(data$Group, names(COLOR_MAP_GROUP))]
-      table<<-dplyr::select(data, SampleName, Group, Color)
+      table.ori<<-data
+      table<<-dplyr::select(data, SampleNameTissue,SampleNameCfDNA, Group, Color)
       list<<-split(table,table$Group)
     },
     sample2group=function(samples){
-      table$Group[match(samples,table$SampleName)]
+      table$Group[match(samples,table$SampleNameTissue)]
     },
     selectFromBed=function(bed,samples=NULL){
       if (is.null(samples)){
-        samples<-table$SampleName
+        samples<-table$SampleNameTissue
       }
       bed[,c(1:3,match(samples, colnames(bed)))]
     },
     selectFromMatrixByGroup=function(data,group){
       df<-filter(table, Group==group)
-      coli<-match(df$SampleName, colnames(data))
+      coli<-match(df$SampleNameTissue, colnames(data))
       data[,coli]
     },
     show = function() {

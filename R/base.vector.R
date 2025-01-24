@@ -115,6 +115,8 @@ SMVC <- setRefClass(
                 hypo = "data.frame",
                 hyper = "data.frame",
                 table.ori = "data.frame",
+                hypo.ori = "data.frame",
+                hyper.ori = "data.frame",
                 reduceBed = 'list',
                 reduceGr = 'list',
                 filename2='character',
@@ -127,6 +129,9 @@ SMVC <- setRefClass(
       }
       table.ori<<-readSMVC(mvm.file)
       if (!is.null(table.ori)){
+        table.ori$class<<-ifelse(table.ori$i0v0>table.ori$i1v0, 'hypo','hyper')
+        hypo.ori<<-filter(table.ori, class=='hypo')
+        hyper.ori<<-filter(table.ori, class=='hyper')
         table<<-dplyr::select(table.ori, 'chrom', 'start', 'end', 'cpg', 'mvs', 'c_num','smvp','ssp','i0','i1','i0v0','i1v0','labels')
         table$class<<-ifelse(table$i0v0>table$i1v0, 'hypo','hyper')
         hypo<<-filter(table, class=='hypo')
@@ -168,7 +173,11 @@ SMVC <- setRefClass(
     },
     .freeze=function(ouDir,dmr=NULL,class="hypo", do.reduce=FALSE){
       smvc.file<-sub("\\.smvc$", ".final.smvc", filename2)
+      smvc.hypo.file<-sub("\\.smvc$", ".final.hypo.smvc", filename2)
+      smvc.hyper.file<-sub("\\.smvc$", ".final.hyper.smvc", filename2)
       saveBed(table.ori[,c(1,4,2,3,5:ncol(table.ori))], smvc.file, col.names=FALSE)
+      saveBed(hypo.ori[,c(1,4,2,3,5:ncol(table.ori))], smvc.hypo.file, col.names=FALSE)
+      saveBed(hyper.ori[,c(1,4,2,3,5:ncol(table.ori))], smvc.hyper.file, col.names=FALSE)
       if (do.reduce){
         out.suffix<-'.reduce.bed'
         table.data<-reduceBed[[class]]

@@ -1,30 +1,58 @@
 source('R/base.vector.R')
 
-
-
-
 # SMVC -------------------------------------------------------------------------
 groups<-names(COLOR_MAP_GROUP)[-1]
 files<-lapply(groups, function(x){
   list(
-    a=file.path(CONFIG$DataInter,'vector/w4',paste0(x,'_1.0_0.4.smvc')),
-    b=file.path(CONFIG$DataInter,'vector/w4',paste0(x,'.smvc'))
+    a=file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes',paste0(x,'_0.95_0.2.smvc')),
+    b=file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes',paste0(x,'.smvc'))
   )
 })
-# names(files)<-groups
-# files[[3]]$a<-file.path(CONFIG$DataInter,'vector/w4','LCC_1.0_0.3.smvc')
+names(files)<-groups
 smvcs<-lapply(files, function(x){
   SMVC(x$a,x$b)
 })
-saveRDS(smvcs,file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
-smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
+saveRDS(smvcs,file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes','smvcs.rds'))
+smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes','smvcs.rds'))
+
+
+smvcs$LUAD$reduceGr$hypo
+
+
+
+data<-smvcs$SCLC$`.->hyper.ori`
+
+
+
+
+
+
+
+bed2gr(smvcs$LUAD$`.->hypo`)
+
+
+reduce(bed2gr(smvcs$LUAD$`.->hypo`),with.revma=TRUE)
+
+
+
+
+
+
+
+a<-dplyr::arrange(data, desc(ssp))
+
+hist(a[1:500,]$smvp)
+
+hist(a$smvp)
+
+hist(a$ssp)
+
 ## Save SMVC -------------------------------------------------------------------
 dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
 ._<-lapply(FACTOR_LEVEL_GROUP[-1], function(x){
   dmr<-dmrList[[x]]
   smvc<-smvcs[[x]]
-  print(dmr)
-  smvc$freeze(file.path(CONFIG$DataInter,'vector/w4/bed'), dmr)
+  smvc$freeze(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/bed'), dmr)
 })
 ## Intersect with DMR ----------------------------------------------------------
 do.call(rbind,lapply(FACTOR_LEVEL_GROUP[-1], function(x){
@@ -41,14 +69,14 @@ do.call(rbind,lapply(FACTOR_LEVEL_GROUP[-1], function(x){
 genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
 cgIslands.gr<-genomicRegion$cgIslands
 tss.gr<-genomicRegion$tss
-smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
+smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes','smvcs.rds'))
 #saveImage("smvc.density.genomicRegion.pdf",width = 5,height = 5.6)
 par(mfrow = c(2, 2))
 plotBedListDensity(smvcs,'hypo','tss', lim=5000, "Hypo",xlab='Distance to TSS',COLOR_MAP_GROUP[-1])
 plotBedListDensity(smvcs,'hypo','cgi', lim=5000, "Hypo",xlab='Distance to TSS',COLOR_MAP_GROUP[-1])
 plotBedListDensity(smvcs,'hyper','tss', lim=5000, "Hyper",xlab='Distance to TSS',COLOR_MAP_GROUP[-1])
 plotBedListDensity(smvcs,'hyper','cgi', lim=5000, "Hyper",xlab='Distance to TSS',COLOR_MAP_GROUP[-1])
-dev.off()
+# dev.off()
 ## Visualization ---------------------------------------------------------------
 ### LUAD -----------------------------------------------------------------------
 smvc<-SMVC(file.path(CONFIG$DataInter,'vector/w4/LUAD_1.0_0.4.smvc'))
@@ -69,44 +97,45 @@ data<-mvm$getByCpG(cpg)
 plotWindow(data,4,bvalue)
 #dev.off()
 # HOMER analysis ---------------------------------------------------------------
-fc<-1.3
-q<-0.01
+LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer/LUAD_0.95_0.2.top500.hypo.smvr'),q.value=0.05)
+LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer/LUSC_0.95_0.2.top500.hypo.smvr'),q.value=0.05)
+LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer/LCC_0.95_0.2.top500.hypo.smvr'),q.value=0.05)
+SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer/SCLC_0.95_0.2.top500.hypo.smvr'),q.value=0.05)
 
-LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUAD_1.0_0.4.hypo.gr0.reduce'),q, fc)
-LUAD.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUAD_1.0_0.4.hyper.gr0.reduce'),q, fc)
-LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUSC_1.0_0.4.hypo.gr0.reduce'),q, fc)
-LUSC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LUSC_1.0_0.4.hyper.gr0.reduce'),q, fc)
-LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LCC_1.0_0.4.hypo.gr0.reduce'),q, fc)
-LCC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/LCC_1.0_0.4.hyper.gr0.reduce'),q, fc)
-SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/SCLC_1.0_0.4.hypo.gr0.reduce'),q, fc)
-SCLC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'vector/w4/homer/SCLC_1.0_0.4.hyper.gr0.reduce'),q, fc)
+LUAD.hypo<-mutate(LUAD.hypo, group="LUAD",class="hypo")
+LUSC.hypo<-mutate(LUSC.hypo, group="LUSC",class="hypo")
+LCC.hypo<-mutate(LCC.hypo, group="LCC",class="hypo")
+SCLC.hypo<-mutate(SCLC.hypo, group="SCLC",class="hypo")
 
-fmg<-list(
+smvc.homer<-do.call(rbind,list(
   LUAD.hypo=LUAD.hypo,
   LUSC.hypo=LUSC.hypo,
   LCC.hypo=LCC.hypo,
-  SCLC.hypo=SCLC.hypo,
-  LUAD.hyper=LUAD.hyper,
-  LUSC.hyper=LUSC.hyper,
-  LCC.hyper=LCC.hyper,
-  SCLC.hyper=SCLC.hyper
-)
+  SCLC.hypo=SCLC.hypo
+))
+write.csv(smvc.homer,file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer','smvr.top500.homer80.csv'),row.names = FALSE)
+## intersect with dmr homer ----------------------------------------------------
+smvr.homer<-read.csv(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/homer','smvr.top500.homer80.csv'))
+dmr.homer<-read.csv(file.path(CONFIG$DataInter,'dmc','p80','homer','dmr.top500.homer80.csv'))
 
-output<-lapply(names(fmg), function(n){
-  x<-fmg[[n]]
-  if(nrow(x)>30){
-    out<-x[1:30,]
-  }else{
-    out<-x
-  }
-  if (nrow(out)>0){
-    out$class<-n
-  }
-  out
+lapply(c('LUAD','LUSC','LCC', 'SCLC'), function(gg){
+    smvc.homer.0<-filter(smvr.homer,group==gg)
+    dmr.homer.0<-filter(dmr.homer,group==gg)
+    intersect(smvc.homer.0$tf,dmr.homer.0$tf)
+    # setdiff(dmr.homer.0$tf,smvc.homer.0$tf)
+    # setdiff(smvc.homer.0$tf,dmr.homer.0$tf)
+    # dmr.homer.0$tf
 })
-output<-do.call(rbind, output)
-#write.csv(output,file.path(CONFIG$DataInter,'vector/w4/homer','smvc.homer.csv'),row.names = FALSE)
-write.csv(output,file.path(CONFIG$DataInter,'vector/w4/homer','smvc.homer.reduce.csv'),row.names = FALSE)
+
+sapply(c('LUAD','LUSC','LCC', 'SCLC'), function(gg){
+    smvc.homer.0<-filter(smvc.homer,group==gg)
+    dmr.homer.0<-filter(dmr.homer,group==gg)
+    cc<-intersect(smvc.homer.0$tf,dmr.homer.0$tf)
+    aa<-setdiff(dmr.homer.0$tf,smvc.homer.0$tf)
+    bb<-setdiff(smvc.homer.0$tf,dmr.homer.0$tf)
+    length(bb)
+})
+
 ## Motif binding region --------------------------------------------------------
 smvcs<-readRDS(file.path(CONFIG$DataInter,'vector/w4','smvcs.rds'))
 motif<-read.csv(file.path(CONFIG$DataInter,'vector/w4/homer/SCLC_1.0_0.4.hypo.gr0.reduce.txt'),sep='\t',check.names = FALSE)
@@ -338,18 +367,21 @@ dev.off()
 
 ## Figure 5D Region of specific SMVC window ------------------------------------
 #mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.4505825.chr1_4505805_4505845.group.mvm'))
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.16373819.chr10_16373799_16373839.group.mvm')) # OK
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.14745014.chr9_14744964_14745064.group.mvm')) # NeuroD1
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.14745014.chr9_147449684_14745044.group.mvm')) # NeuroD1
-mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.20775751.chr14_20775721_20775781.group.mvm')) # NeuroD1
+# mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.16373819.chr10_16373799_16373839.group.mvm')) # OK
+# mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.14745014.chr9_14744964_14745064.group.mvm')) # NeuroD1
+# mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.14745014.chr9_147449684_14745044.group.mvm')) # NeuroD1
+# mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.20775751.chr14_20775721_20775781.group.mvm')) # NeuroD1
 #mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4/region/SCLC.4505825.chr1_4505775_4505875.group.mvm')) # ok
+mvm<-MVM(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/region/SCLC.top500.chr19_25042541_25042624.group.mvm'))
 pp0<-plotSmvcRegion(mvm$getBySample('CTL'))
 pp1<-plotSmvcRegion(mvm$getBySample('LUAD'))
 pp2<-plotSmvcRegion(mvm$getBySample('LUSC'))
 pp3<-plotSmvcRegion(mvm$getBySample('LCC'))
 pp4<-plotSmvcRegion(mvm$getBySample('SCLC'))
-saveImage("smvc.SCLC.hypo.20775751.chr14_20775721_20775781.pdf",width = 9,height = 7)
-pp0/pp1/pp2/pp3/pp4
+pp5<-plotSmvcRegion(mvm$getBySample('leukocytes'))
+# saveImage("smvc.SCLC.hypo.20775751.chr14_20775721_20775781.pdf",width = 9,height = 7)
+saveImage("smvr.SCLC.top500.chr19_25042541_25042624.group.pdf",width = 9,height = 8)
+pp0/pp1/pp2/pp3/pp4/pp5
 dev.off()
 
 ## Figure 5E TFs insercet with DMR ---------------------------------------------
@@ -435,8 +467,21 @@ smvc.anno<-lapply(names(smvcs), function(x){
 
 smvc.anno<-do.call(rbind,smvc.anno)
 saveBed(smvc.anno,file.path(CONFIG$DataInter,'vector/w4/anno/smvc.anno.bed'))
+## Table S9. MV windows QC -----------------------------------------------------
+smvr.LUAD<-read.csv(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/LUAD_0.95_0.2.top500.hypo.smvr.bed'),sep = '\t',header = FALSE)
+smvr.LUSC<-read.csv(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/LUSC_0.95_0.2.top500.hypo.smvr.bed'),sep = '\t',header = FALSE)
+smvr.LCC<-read.csv(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/LCC_0.95_0.2.top500.hypo.smvr.bed'),sep = '\t',header = FALSE)
+smvr.SCLC<-read.csv(file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/SCLC_0.95_0.2.top500.hypo.smvr.bed'),sep = '\t',header = FALSE)
+smvr.LUAD$group='LUAD'
+smvr.LUSC$group='LUSC'
+smvr.LCC$group='LCC'
+smvr.SCLC$group='SCLC'
+hypo.list<-list(smvr.LUAD, smvr.LUSC,smvr.LCC,smvr.SCLC)
+hypo<-do.call(rbind,hypo.list)
+colnames(hypo)<-c('Chrom','Start','End','CpGNumber','Length','SMVP','SSP','DistanceToCompletelyMethylatedMVs','DistanceToCompletelyUnMethylatedMVs','xx','Subtype')
+write.csv(hypo,file.path(CONFIG$DataResult,'table','smvr.table9.hypo.top500.csv'))
 
-## Table S10. overlap of SMVC TFs and DMR TFs -------------------------------------------------------
+## Table S10. overlap of SMVC TFs and DMR TFs ----------------------------------
 homerDMR<-read.csv(file.path(CONFIG$DataInter,'dmc','p80','homer','dmr.homer80.top.csv'))
 homerSMVC<-read.csv(file.path(CONFIG$DataInter,'vector/w4/homer','smvc.homer.reduce.csv'))
 homerDMR<-split(homerDMR, homerDMR$class)

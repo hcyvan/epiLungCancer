@@ -24,15 +24,15 @@ rule all:
         expand(data_dir / "{sample}_0.95_0.2.top500.hypo.smvr.bed",sample=groups),
         expand(data_dir / "{sample}_0.95_0.2.top500.hyper.smvr.bed",sample=groups),
 
-rule separating:
-    params:
-        group=myfunc
-    output:
-        data_dir / "{sample}_0.95_0.2.smvc"
-    shell:
-        """
-        pattools mv-separating -i {MVC_DATA} -g {params.group} --frac-mvs 0.95 --frac-samples 0.2 --with-meta -o {output}
-        """
+# rule separating:
+#     params:
+#         group=myfunc
+#     output:
+#         data_dir / "{sample}_0.95_0.2.smvc"
+#     shell:
+#         """
+#         pattools mv-separating -i {MVC_DATA} -g {params.group} --frac-mvs 0.95 --frac-samples 0.2 --with-meta -o {output}
+#         """
 
 rule merge:
     input:
@@ -42,7 +42,7 @@ rule merge:
     shell:
         """
         set +euo pipefail
-        pattools smvc-merge -i {input} -o {output} -e chrX,chrY
+        pattools smvc2smvr -i {input} -o {output} -e chrX,chrY
         """
 
 rule top500:
@@ -54,6 +54,6 @@ rule top500:
     shell:
         """
         set +euo pipefail
-        cat {input}|grep hypo|sort -k4 -k5 -n -r |head -n500 > {output.hypo}
-        cat {input}|grep hyper|sort -k4 -k5 -n -r |head -n500 > {output.hyper}
+        cat {input}|grep hypo|sort -k6 -k7 -n -r |head -n500 > {output.hypo}
+        cat {input}|grep hyper|sort -k6 -k7 -n -r |head -n500 > {output.hyper}
         """

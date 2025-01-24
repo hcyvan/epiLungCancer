@@ -2,9 +2,141 @@ source('R/base.R')
 source('R/base.vector.R')
 library(easyepi)
 
+
+#########################################
+
+uxm.file<-file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/uxm/all.cfDNA.uxm.bed')
+uxm<-read.csv(uxm.file,sep='\t',check.names = FALSE)
+
+m<-uxm[,6:ncol(uxm)]
+
+Heatmap(m,
+        name='uxm',
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = TRUE
+)
+
+#########################################
+
+uxm.file<-file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/uxm/all.mock.uxm.bed')
+uxm<-read.csv(uxm.file,sep='\t',check.names = FALSE)
+
+m<-uxm[,6:ncol(uxm)]
+
+Heatmap(m,
+        name='uxm',
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = TRUE
+)
+
+
+
+#######################################################################################
+
+all_data<-read_excel(file.path(CONFIG$DataRaw,"AllData.xlsx"),sheet = "jiashan")
+uxm.file<-file.path(CONFIG$DataInter,'vector/w4.2/lungWithGSE186458.leukocytes/uxm/all.uxm.bed')
+uxm<-read.csv(uxm.file,sep='\t',check.names = FALSE)
+table.ori<-filter(SAMPLE$table.ori, !is.na(SampleNameTissue))
+m<-uxm[, table.ori$WGBS_data]
+colnames(m)<-table.ori$SampleNameTissue
+m[m==-1]<-0
+
+
+groups<-SAMPLE$sample2group(colnames(m))
+column_annotation <-HeatmapAnnotation(
+  df=data.frame(Stage=groups),
+  col = list(Stage =COLOR_MAP_GROUP),
+  show_annotation_name =FALSE,
+  annotation_name_side='left'
+)
+data.group<-c(rep('LUAD',500), rep('LUSC',500),rep('LCC',500),rep('SCLC',500))
+row_annotation <-HeatmapAnnotation(
+  df=data.frame(Stage=factor(data.group,levels = FACTOR_LEVEL_GROUP)),
+  col = list(Stage =COLOR_MAP_GROUP),
+  show_annotation_name =FALSE,
+  which = 'row'
+)
+# saveImage("uxm.top500.pdf",width = 8,height = 7)
+Heatmap(m,
+        name='uxm',
+        col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+        top_annotation = column_annotation,
+        right_annotation  = row_annotation,
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = FALSE
+)
+# dev.off()
+
+#############
+cfDNA<-read_excel(file.path(CONFIG$DataRaw,"SupplementaryData.xlsx"),sheet = "cfDNA")
+cfDNA<-cfDNA[,c('SampleName','Group','Usage')]
+cfDNA<-cfDNA%>%filter(!is.na(SampleName))
+samples<-cfDNA$SampleName
+# m<-m[,names(sort(colSums(m!=0)))]
+COLOR_MAP<-c('#2878b5','#c82423','#ffb15f')
+names(COLOR_MAP)<-c('Healthy','LUAD','LUSC')
+
+
+m<-uxm[1:500,6:ncol(uxm)]
+m[m==-1]<-0
+m<-m[,samples[samples%in%colnames(m)]]
+column_annotation <-HeatmapAnnotation(
+  df=data.frame(aa=cfDNA$Group),
+  zz = anno_barplot(colSums(m!=0)),
+  col = list(aa =COLOR_MAP),
+  show_annotation_name =FALSE,
+  annotation_name_side='left'
+)
+saveImage("uxm.cfDNA.LUAD.top500.pdf",width = 5,height = 2.5)
+Heatmap(m,
+        name='Count',
+        top_annotation = column_annotation,
+        col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = FALSE
+)
+dev.off()
+
+
+m<-uxm[501:1000,6:ncol(uxm)]
+m[m==-1]<-0
+m<-m[,samples[samples%in%colnames(m!=0)]]
+column_annotation <-HeatmapAnnotation(
+  df=data.frame(aa=cfDNA$Group),
+  zz = anno_barplot(colSums(m!=0)),
+  col = list(aa =COLOR_MAP),
+  show_annotation_name =FALSE,
+  annotation_name_side='left'
+)
+saveImage("uxm.cfDNA.LUSC.top500.pdf",width = 5,height = 2.5)
+Heatmap(m,
+        name='Count',
+        top_annotation = column_annotation,
+        col=colorRamp2(c(0,max(m)), c("#fffeee", "#c82423")),
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        show_row_names = FALSE,
+        show_column_names = FALSE
+)
+dev.off()
+################################################################################
+Healthy.t
+
+
+
+
+
 # Public data ------------------------------------------------------------------
 ## GSE186458 -------------------------------------------------------------------
-### CpG ---------------------------------------------------------------------
+### CpG ------------------------------------------------------------------------
 mvm<-MVM(file.path(CONFIG$DataInter,'vector/GSE186458/w4/LUAD.sample.mvm'))
 data<-mvm$getByCpG(174592)
 plotWindow2(data,window = 4)
@@ -176,5 +308,37 @@ ggplot(data, aes(x=sample , y=hit)) +
   scale_y_continuous(position = "right")
 dev.off()
 
+#### aaaa ----------------------------------------------------------------------
+all_data<-read_excel(file.path(CONFIG$DataRaw,"AllData.xlsx"),sheet = "jiashan")
+plasma<-filter(all_data, SampleType=='plasma')
+mvh<-MVH(file.path(CONFIG$DataInter,'vector/cfDNA/w4/spcr/lungWithGSE186458.leukocytes/LUSC_0.95_0.2.spcr'))
+m<-mvh$matrix()
+# m<-m[rowSums(m!=0)!=0,]
+# m <- m[order(rowSums(m), decreasing = TRUE), ]
+# m1<-m1[,sample(1:ncol(m1),ncol(m1)/2)]
+# m1<-m1[,1:ncol(m1)/2]
+# m0<-m[1:2000,]
+
+m<-m[,plasma$SampleId]
+m<-m[,order(colSums(m))]
+
+m0<-log(m+0.0001)
+# m0<-m
+m0<-m0[sample(1:nrow(m0), 500),]
+Heatmap(m0,
+        name='Count',
+        # col=colorRamp2(c(0,max(m0)), c("#fffeee", "#c82423")),
+        cluster_rows = FALSE,
+        cluster_columns = FALSE
+        # show_row_names = !hide.names,
+        # show_column_names = !hide.names
+)
+
+#### aaaa ----------------------------------------------------------------------
 
 
+
+m[,plasma$SampleId]%>%dim
+
+
+match(plasma$SampleId, colnames(m))

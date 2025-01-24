@@ -195,6 +195,7 @@ outputDMC<-function(one2rest, outfile){
   out$class<-paste(one2restDf$class, one2restDf$group,sep = '.')
   out$start <- sapply(out$start, function(x){format(x, scientific = FALSE)})
   out$end <- sapply(out$end, function(x){format(x, scientific = FALSE)})
+  out$percentile<-one2restDf$percentile
   saveBed(out,outfile)
 }
 one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.rds'))
@@ -203,7 +204,11 @@ one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','p85','one2rest85.rds'))
 outputDMC(one2rest,file.path(CONFIG$DataInter, 'dmc','p85','one2rest85.dmc.bed'))
 one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','p90','one2rest90.rds'))
 outputDMC(one2rest,file.path(CONFIG$DataInter, 'dmc','p90','one2rest90.dmc.bed'))
-## mcomppost dmc2dmr -----------------------------------------------------------
+## workflow to get DMR ---------------------------------------------------------
+#'------------------------------------------------------------------------------
+#' workflow/methylation-level.smk
+#'------------------------------------------------------------------------------
+### mcomppost dmc2dmr ----------------------------------------------------------
 #'------------------------------------------------------------------------------
 #' mcomppost dmc2dmr -i one2rest80.dmc.bed -o one2rest80.dmr.py.bed
 #'------------------------------------------------------------------------------
@@ -231,6 +236,37 @@ splitPyDmr<-function(dmrpy){
 splitPyDmr(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.py.bed'))
 splitPyDmr(file.path(CONFIG$DataInter, 'dmc','p85','one2rest85.dmr.py.bed'))
 splitPyDmr(file.path(CONFIG$DataInter, 'dmc','p90','one2rest90.dmr.py.bed'))
+### Top 500 subtype-specific DMR -----------------------------------------------
+CTL.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.CTL.top500.hypo.dmr.bed"), header=FALSE, force.refresh = TRUE)
+CTL.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.CTL.top500.hyper.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LUAD.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUAD.top500.hypo.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LUAD.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUAD.top500.hyper.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LUSC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUSC.top500.hypo.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LUSC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUSC.top500.hyper.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LCC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LCC.top500.hypo.dmr.bed"), header=FALSE, force.refresh = TRUE)
+LCC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LCC.top500.hyper.dmr.bed"), header=FALSE, force.refresh = TRUE)
+SCLC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.SCLC.top500.hypo.dmr.bed"), header=FALSE, force.refresh = TRUE)
+SCLC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.SCLC.top500.hyper.dmr.bed"), header=FALSE, force.refresh = TRUE)
+
+CTL.hypo$group='CTL'
+LUAD.hypo$group='LUAD'
+LUSC.hypo$group='LUSC'
+LCC.hypo$group='LCC'
+SCLC.hypo$group='SCLC'
+CTL.hypo$group='CTL'
+LUAD.hypo$group='LUAD'
+LUSC.hypo$group='LUSC'
+LCC.hypo$group='LCC'
+SCLC.hypo$group='SCLC'
+
+top500.dmr<-list(
+  CTL=list(hypo=CTL.hypo,hyper=CTL.hyper),
+  LUAD=list(hypo=LUAD.hypo,hyper=LUAD.hyper),
+  LUSC=list(hypo=LUSC.hypo,hyper=LUSC.hyper),
+  LCC=list(hypo=LCC.hypo,hyper=LCC.hyper),
+  SCLC=list(hypo=SCLC.hypo,hyper=SCLC.hyper)
+)
+saveRDS(top500.dmr,file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.top500.list.rds'))
 ## DMR Density near TSS and CGI ------------------------------------------------
 genomicRegion<-readRDS(file.path(CONFIG$DataRaw,'genomicRegion.rds'))
 dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
@@ -246,7 +282,7 @@ plotBedListDensity(dmrList,'hyper','cgi', lim=5000, "Hyper",xlab='Distance to CG
 dev.off()
 
 # GREAT analysis ---------------------------------------------------------------
-dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.list.rds'))
+dmrList<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.top500.list.rds'))
 greatBP<-lapply(names(dmrList), function(x){
   lapply(names(dmrList[[x]]), function(y){
     dmr<-dmrList[[x]][[y]]
@@ -259,8 +295,9 @@ names(greatBP)<-FACTOR_LEVEL_GROUP
 for(g in FACTOR_LEVEL_GROUP){
   names(greatBP[[g]])<-c('hypo','hyper')
 }
-#saveRDS(greatBP,file.path(CONFIG$DataInter, 'dmc','p80','great','one2rest80.dmr.list.greatBP.rds'))
-greatBP<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','great','one2rest80.dmr.list.greatBP.rds'))
+#saveRDS(greatBP,file.path(CONFIG$DataInter, 'dmc','p80','great','one2rest80.dmr.top500.list.greatBP.rds'))
+
+greatBP<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','great','one2rest80.dmr.top500.list.greatBP.rds'))
 res<-greatBP$CTL$hypo
 getEnrichmentTable(res)
 getRegionGeneAssociations(res)
@@ -279,53 +316,41 @@ greatBPtb<-do.call(rbind,lapply(names(greatBP), function(group){
   out<-rbind(hypo,hyper)
   out<-filter(out,p_adjust<=0.01,p_adjust_hyper<=0.01)
 }))
-write.csv(greatBPtb,file.path(CONFIG$DataInter,'dmc','p80','great','dmr.greatBP.csv'),row.names = FALSE)
+write.csv(greatBPtb,file.path(CONFIG$DataInter,'dmc','p80','great','dmr.top500.greatBP.csv'),row.names = FALSE)
 greatBPtbTop<-do.call(rbind,lapply(split(greatBPtb,greatBPtb$key), function(x){
   x[1:20,]
 }))
 write.csv(greatBPtbTop,file.path(CONFIG$DataInter,'dmc','p80','great','dmr.greatBP.top.csv'),row.names = FALSE)
 # HOMER analysis ---------------------------------------------------------------
-fc<-1.3
-q<-0.01
-CTL.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/CTL.hypo'),q, fc)
-LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LUAD.hypo'),q, fc)
-LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LUSC.hypo'),q, fc)
-LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LCC.hypo'),q, fc)
-SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/SCLC.hypo'),q, fc)
-CTL.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/CTL.hyper'),q, fc)
-LUAD.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LUAD.hyper'),q, fc)
-LUSC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LUSC.hyper'),q, fc)
-LCC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/LCC.hyper'),q, fc)
-SCLC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/SCLC.hyper'),q, fc)
+LUAD.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LUAD.top500.hypo.dmr'),q.value=0.05)
+LUSC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LUSC.top500.hypo.dmr'),q.value=0.05)
+LCC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LCC.top500.hypo.dmr'),q.value=0.05)
+SCLC.hypo<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.SCLC.top500.hypo.dmr'),q.value=0.05)
+LUAD.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LUAD.top500.hyper.dmr'),q.value=0.05)
+LUSC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LUSC.top500.hyper.dmr'),q.value=0.05)
+LCC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.LCC.top500.hyper.dmr'),q.value=0.05)
+SCLC.hyper<-getfindMotifsGenomeResults(file.path(CONFIG$DataInter,'/dmc/p80/homer/one2rest80.SCLC.top500.hyper.dmr'),q.value=0.05)
 
-fmg<-list(
-  CTL.hypo=CTL.hypo,
+LUAD.hypo<-mutate(LUAD.hypo, group="LUAD",class="hypo")
+LUAD.hyper<-mutate(LUAD.hyper, group="LUAD",class="hyper")
+LUSC.hypo<-mutate(LUSC.hypo, group="LUSC",class="hypo")
+LUSC.hyper<-mutate(LUSC.hyper, group="LUSC",class="hyper")
+LCC.hypo<-mutate(LCC.hypo, group="LCC",class="hypo")
+LCC.hyper<-mutate(LCC.hyper, group="LCC",class="hyper")
+SCLC.hypo<-mutate(SCLC.hypo, group="SCLC",class="hypo")
+SCLC.hyper<-mutate(SCLC.hyper, group="SCLC",class="hyper")
+
+dmr.homer<-do.call(rbind,list(
   LUAD.hypo=LUAD.hypo,
   LUSC.hypo=LUSC.hypo,
   LCC.hypo=LCC.hypo,
   SCLC.hypo=SCLC.hypo,
-  CTL.hyper=CTL.hyper,
   LUAD.hyper=LUAD.hyper,
   LUSC.hyper=LUSC.hyper,
   LCC.hyper=LCC.hyper,
   SCLC.hyper=SCLC.hyper
-)
-
-output<-lapply(names(fmg), function(n){
-  x<-fmg[[n]]
-  if(nrow(x)>10){
-    out<-x[1:20,]
-  }else{
-    out<-x
-  }
-  if (nrow(out)>0){
-    out$class<-n
-  }
-  out
-})
-output<-do.call(rbind, output)
-write.csv(output,file.path(CONFIG$DataInter,'dmc','p80','homer','dmr.homer80.top.csv'),row.names = FALSE)
-
+))
+write.csv(dmr.homer,file.path(CONFIG$DataInter,'dmc','p80','homer','dmr.top500.homer80.csv'),row.names = FALSE)
 # Figures ----------------------------------------------------------------------
 ## Figure 2B. Count of subtype-specific DMCs -----------------------------------
 one2rest<-readRDS(file.path(CONFIG$DataInter,'dmc','p80','one2rest80.rds'))
@@ -396,19 +421,38 @@ plot.dmc.density('hypo',cgIslands.gr, lim=5000,title="Hypo",xlab='Distance to CG
 plot.dmc.density('hyper',tss.gr, lim=5000, "Hyper",xlab='Distance to TSS')
 plot.dmc.density('hyper',cgIslands.gr, lim=5000, "Hyper",xlab='Distance to CGI')
 dev.off()
-## Figure 2D. subtype-specific DMC heatmap -------------------------------------
-one2rest<-readRDS(file.path(CONFIG$DataInter, 'dmc','one2rest80.rds'))
-plotTopkHeatmap<-function(class='hypo', top=2000){
-  hypo1000<-filterDmc(one2rest, class=class,top=top)
-  multiInterAll(hypo1000)
-  one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmc.beta.bed'),header = TRUE,ext='bed')
-  # one2rest.dmc.beta<-one2rest.dmc.beta[rowSums(one2rest.dmc.beta[,-1:-3]==-1)==0,]
-  features<-bed2feature(one2rest.dmc.beta)
-  hypo1000M<-lapply(hypo1000, function(x){
-    one2rest.dmc.beta[match(bed2feature(x),features),-c(1:3)]
-  })
-  m<-do.call(rbind,hypo1000M)
-  m<-m[rowSums(m==-1)==0,]
+## Figure 2D. subtype-specific DMR heatmap -------------------------------------
+CTL.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.CTL.top500.hypo.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+CTL.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.CTL.top500.hyper.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LUAD.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUAD.top500.hypo.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LUAD.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUAD.top500.hyper.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LUSC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUSC.top500.hypo.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LUSC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LUSC.top500.hyper.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LCC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LCC.top500.hypo.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+LCC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.LCC.top500.hyper.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+SCLC.hypo<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.SCLC.top500.hypo.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+SCLC.hyper<-loadData(file.path(CONFIG$DataInter, "dmc/p80/one2rest80.SCLC.top500.hyper.dmr.sample.beta.bed"), header=TRUE, force.refresh = TRUE)
+
+CTL.hypo$group='CTL'
+CTL.hyper$group='CTL'
+LUAD.hypo$group='LUAD'
+LUAD.hyper$group='LUAD'
+LUSC.hypo$group='LUSC'
+LUSC.hyper$group='LUSC'
+LCC.hypo$group='LCC'
+LCC.hyper$group='LCC'
+SCLC.hypo$group='SCLC'
+SCLC.hyper$group='SCLC'
+
+hypo.list<-list(LUAD.hypo, LUSC.hypo,LCC.hypo,SCLC.hypo)
+hyper.list<-list(CTL.hyper, LUAD.hyper, LUSC.hyper,LCC.hyper,SCLC.hyper)
+hypo<-do.call(rbind,hypo.list)
+hyper<-do.call(rbind,hyper.list)
+
+
+getHeatmap<-function(data){
+  m<-data[,c(-1:-3)]
+  m<-m[,-ncol(m)]
   groups<-SAMPLE$sample2group(colnames(m))
   column_annotation <-HeatmapAnnotation(
     df=data.frame(Stage=groups),
@@ -417,16 +461,15 @@ plotTopkHeatmap<-function(class='hypo', top=2000){
     annotation_name_side='left'
   )
   row_annotation <-HeatmapAnnotation(
-    df=data.frame(Stage=factor(sapply(strsplit(rownames(m),'\\.'),function(x){substr(x[1],6, nchar(x[1]))}),levels = FACTOR_LEVEL_GROUP)),
+    df=data.frame(Stage=factor(data$group,levels = FACTOR_LEVEL_GROUP)),
     col = list(Stage =COLOR_MAP_GROUP),
     show_annotation_name =FALSE,
     which = 'row'
   )
   
-  m<-t(scale(t(m)))
   Heatmap(m,
           use_raster = FALSE,
-          col=colorRamp2(c(-1, 0,1), c("#4574b6", "#fdfec2", "#d83127")),
+          col=colorRamp2(c(0, 0.5,1), c("#4574b6", "#fdfec2", "#d83127")),
           right_annotation  = row_annotation,
           top_annotation = column_annotation,
           cluster_rows = FALSE,
@@ -436,14 +479,12 @@ plotTopkHeatmap<-function(class='hypo', top=2000){
   )
 }
 
-one2rest.dmc.beta<-loadData(file.path(CONFIG$DataInter, 'dmc','one2rest80.dmc.beta.bed'),header = TRUE,ext='bed')
-saveImage("dmc.heatmap.hypo.top2000.pdf",width = 5,height = 3.8)
-plotTopkHeatmap('hypo',2000)
+h1<-getHeatmap(hypo)
+h2<-getHeatmap(hyper)
+saveImage("dmr.heatmap.top500.hypo.pdf",width = 5,height = 3.5)
+# h1%v%h2
+h1
 dev.off()
-saveImage("dmc.heatmap.hyper.top1000.pdf",width = 5,height = 3.8)
-plotTopkHeatmap('hyper',1000)
-dev.off()
-
 ## Figure 2E. Great analysis of subtype-specific DMRs --------------------------
 data0<-read_xlsx(file.path(CONFIG$DataInter,'dmc','p80','great','dmr.greatBP.final.xlsx'))
 data<-dplyr::select(data0, description=description, group=key,fc=fold_enrichment_hyper, p=p_adjust_hyper)
@@ -492,3 +533,18 @@ dmrHypoCount<-data.frame(dmrHypoCount,dmrHypoCountInGenome)
 dmrHyperCount<-data.frame(dmrHyperCount,dmrHyperCountInGenome)
 write.csv(dmrHypoCount,file.path(CONFIG$DataResult,'table','dmr.hypo.count.csv'))
 write.csv(dmrHyperCount,file.path(CONFIG$DataResult,'table','dmr.hyper.count.csv'))
+## Table S5. Top 500 subtype-specific DMR  -------------------------------------
+dmr.top500<-readRDS(file.path(CONFIG$DataInter, 'dmc','p80','one2rest80.dmr.top500.list.rds'))
+LUAD.hypo<-dmr.top500$LUAD$hypo
+LUSC.hypo<-dmr.top500$LUSC$hypo
+LCC.hypo<-dmr.top500$LCC$hypo
+SCLC.hypo<-dmr.top500$SCLC$hypo
+LUAD.hypo$group='LUAD'
+LUSC.hypo$group='LUSC'
+LCC.hypo$group='LCC'
+SCLC.hypo$group='SCLC'
+hypo.list<-list(LUAD.hypo, LUSC.hypo,LCC.hypo,SCLC.hypo)
+hypo<-do.call(rbind,hypo.list)
+colnames(hypo)<-c('Chrom','Start','End','xx','CpGNumber','Length','Pt','Subtype')
+write.csv(hypo,file.path(CONFIG$DataResult,'table','dmr.hypo.table5.hypo.top500.csv'))
+
